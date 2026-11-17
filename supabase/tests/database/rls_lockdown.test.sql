@@ -5,7 +5,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(11);
+select plan(16);
 
 select is(
   (select count(*)::int from pg_tables where schemaname = 'public' and not rowsecurity),
@@ -59,6 +59,43 @@ select is(
   (select public from storage.buckets where id = 'grids'),
   false,
   'bucket grids existe e é privado'
+);
+
+-- Equivalentes, em SQL, aos advisors de segurança (o endpoint de advisors
+-- do projeto remoto não está acessível; ver D-16).
+select is(
+  (select count(*)::int from storage.buckets where public),
+  0,
+  'nenhum bucket público no Storage'
+);
+
+select is(
+  (select count(*)::int from pg_views where schemaname = 'public'),
+  0,
+  'nenhuma view em public (views ignoram RLS por padrão)'
+);
+
+select is(
+  (select count(*)::int from pg_proc where pronamespace = 'public'::regnamespace and prosecdef),
+  0,
+  'nenhuma função SECURITY DEFINER em public'
+);
+
+select is(
+  (select count(*)::int from pg_proc p
+   where p.pronamespace = 'public'::regnamespace
+     and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')),
+  0,
+  'toda função de public fixa o search_path'
+);
+
+select is(
+  (select count(*)::int from pg_proc p
+   where p.pronamespace = 'public'::regnamespace
+     and (has_function_privilege('anon', p.oid, 'execute')
+          or has_function_privilege('authenticated', p.oid, 'execute'))),
+  0,
+  'anon e authenticated não executam nenhuma função de public'
 );
 
 set local role anon;
