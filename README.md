@@ -6,7 +6,7 @@ Gratuito, sem anúncios e sem assinatura. Sem vínculo oficial com o Iate Clube 
 
 > **Aviso:** este app não substitui os boletins e avisos oficiais da Marinha do Brasil. Ele mostra previsões de modelos numéricos, não medições. Consulte sempre o boletim oficial antes de sair.
 
-**Estado:** etapa 1 de 7 (estrutura inicial). Ainda não há funcionalidade. Plano: [docs/PLANO-EXECUCAO.md](docs/PLANO-EXECUCAO.md). Especificação: [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
+**Estado:** etapa 2 de 7 (banco de dados). Ainda não há funcionalidade para o usuário. Plano: [docs/PLANO-EXECUCAO.md](docs/PLANO-EXECUCAO.md). Especificação: [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
 
 ## Pré-requisitos (Windows 11)
 
@@ -38,6 +38,25 @@ npm run dev                    # front em modo de desenvolvimento
 | `npm run notice:add` / `notice:checked` | Registro de avisos da Marinha (implementados na etapa 5) |
 
 Antes de cada push: `npm run lint`, `npm test` e `npm run build` passando.
+
+## Banco de dados (Supabase)
+
+Migrações em `supabase/migrations/` (sempre criadas com `npx supabase migration new <nome>`) e testes pgTAP em `supabase/tests/database/`.
+
+```powershell
+npx supabase start          # stack local (Docker Desktop aberto)
+npx supabase db reset       # recria o banco local e aplica as migrações
+npx supabase test db        # testes pgTAP (RLS fechada e reserve_calls)
+npx supabase db lint        # erros de tipo nas funções
+npx supabase db advisors    # advisors de segurança e desempenho
+npx supabase stop
+```
+
+- **Esquema:** tabelas da especificação (B8). RLS ativa em todas, **sem nenhuma política**; `anon` e `authenticated` sem privilégio. Só o papel de serviço acessa (Functions, job e scripts locais).
+- **`reserve_calls(at, source, n, day_limit, hour_limit, minute_limit)`:** reserva atômica de chamadas ao Open-Meteo antes de chamar a fonte. Verifica dia, hora e minuto (UTC), nessa ordem; limite nulo não se aplica; se negar, não incrementa nada e devolve o motivo (`day`, `hour` ou `minute`). Só o `service_role` executa.
+- **Storage:** bucket privado `grids` (`GRID_BUCKET`) [PROPOSTA], sem políticas.
+- **Advisors:** os avisos `rls_enabled_no_policy` (nível INFO) são intencionais: nenhuma tabela deve ser acessível pela Data API.
+- **Skills do Claude Code:** `supabase` e `supabase-postgres-best-practices` (MIT) em `.claude/skills/`, versão fixada em `skills-lock.json`. Restaurar: `npx skills experimental_install`.
 
 ## Estrutura
 
