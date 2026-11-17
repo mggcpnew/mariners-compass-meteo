@@ -32,6 +32,8 @@ IDs mantidos da especificação. P-02, P-08, P-10, P-13 e P-14 viraram as tarefa
 | D-07 | Risco aceito: `npm audit` acusa ReDoS no `picomatch` (GHSA-fc5q-39xc-vjpf), via `tinyglobby`/`fdir` em Vite e typescript-eslint | 17/11/2026 | Só ferramentas de desenvolvimento; nada entra no bundle do app. A única correção oferecida (`npm audit fix --force`) rebaixa o Vite para 6.2.7. Reavaliar a cada atualização de dependências | `npm audit`, 17/11/2026 | Claude Code |
 | D-08 | Deploy de produção automático desligado no Git (`vercel.json`: `git.deploymentEnabled.main = false`). Previews liberados | 17/11/2026 | Produção só com aprovação do dono (regra do projeto) | — | dono do projeto |
 | D-09 | Licença do código: **MIT**, copyright "Mariner's Compass Meteorologia" | 17/11/2026 | Escolha do dono (P3) | `LICENSE` | dono do projeto |
+| D-10 | Contas criadas e vinculadas: GitHub `mggcpnew/mariners-compass-meteo` (público); Supabase Free `mariners-compass-meteo`, ref `ifksyptdehkzwgynllyb`, região `sa-east-1`, numa conta Supabase separada; Vercel `mggcpnews-projects/mariners-compass-meteo` (Hobby), conectado ao GitHub | 17/11/2026 | Aprovação do dono (P4, P5 e P6) | `gh repo view`; `npx supabase link`; `vercel link` | dono do projeto |
+| D-11 | Senha do Postgres remoto gerada aleatoriamente (32 caracteres) e guardada só em `.env.local` (`SUPABASE_DB_PASSWORD`). O dono deve copiá-la para um gerenciador de senhas | 17/11/2026 | Não exibir segredo no terminal nem no repositório | — | dono do projeto |
 
 ## Resultado das tarefas
 
