@@ -1,0 +1,41 @@
+# Pendências e decisões
+
+Registro das incertezas reais (B14.1), das decisões tomadas durante a construção e do resultado das tarefas (B14.2). Marcadores: ver [ESPECIFICACAO.md](ESPECIFICACAO.md), "Como ler a Parte B".
+
+## Pendências
+
+IDs mantidos da especificação. P-02, P-08, P-10, P-13 e P-14 viraram as tarefas T-10, T-11, T-12, T-13 e T-14.
+
+| ID | Decisão e padrão | Data | Motivo | Evidência | Responsável |
+|---|---|---|---|---|---|
+| P-01 | [A CONFIRMAR] Confirmação formal da Marinha sobre a republicação da tábua de maré (não bloqueante). Padrão: exibir com crédito ao CHM/DHN, só dados de previsão, sem reproduzir o PDF nem o layout, com aviso de navegação; se a Marinha negar, desligar a exibição e usar o nível do mar do modelo com rótulo | 17/11/2026 | Sem licença escrita; PDF oficial e público; exibição aprovada pelo dono | Pedido ao BNDO: chm.bndo@marinha.mil.br, até 10 dias úteis, gratuito (https://www.gov.br/pt-br/servicos/obter-servicos-do-banco-nacional-de-dados-oceanograficos, lida) | dono do projeto |
+| P-03 | [A CONFIRMAR] Limite por IP do Open-Meteo no Vercel e nos runners do GitHub. Padrão: cache de 3 h, orçamento, tetos por minuto e hora, sem nova tentativa imediata, stale em falha | 17/11/2026 | Termos avisam sobre Vercel; runners compartilham IPs | https://open-meteo.com/en/terms (lida) | Claude Code |
+| P-04 | [A CONFIRMAR] Termos de reuso dos avisos da Marinha. Padrão: link e texto colado, sem scraping | 17/11/2026 | Páginas do CHM retornaram 403 | https://www.marinha.mil.br/chm (busca) | dono do projeto |
+| P-05 | [A CONFIRMAR] Token, termos e URL de alertas do INMET. Padrão: API fora do MVP | 17/11/2026 | Manual só citado por terceiros | https://portal.inmet.gov.br/manual/manual-de-uso-da-api-esta%C3%A7%C3%B5es (não lido) | dono do projeto |
+| P-06 | [A CONFIRMAR] METAR: URL e termos do DECEA/REDEMET e distância. Padrão: fora do MVP; não estimar distância | 17/11/2026 | Fonte oficial não verificada | METAR NOAA/NWS (busca) | dono do projeto |
+| P-07 | [A CONFIRMAR] Dados de boia ou estação costeira na baía. Padrão: indisponível, fora do MVP | 17/11/2026 | Boias da baía irregulares segundo notícia de 10/2026 | https://www.marinha.mil.br/chm/node/70352 (busca) | dono do projeto |
+| P-09 | [A CONFIRMAR] Modelo gratuito de maior resolução. Padrão: grades de 2 e 0,25 grau, interpolação bilinear, avisos por tela | 17/11/2026 | Nenhum encontrado | T-08 | Claude Code pesquisa; dono do projeto aprova troca |
+| P-11 | [A CONFIRMAR] Web Push no iOS e VAPID. Padrão: teste manual em aparelho; push só em PWA instalado | 17/11/2026 | Depende de aparelho real | https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/ | Claude Code prepara; dono do projeto testa |
+| P-12 | [A CONFIRMAR] Estação maregráfica mais próxima. Padrão: Niterói/Ponta da Armação se constar nos 44 portos da tábua 2026; senão a mais próxima, com distância registrada | 17/11/2026 | Lista 2026 não lida | Série 1989–2021 (busca, IBGE) | dono do projeto |
+| P-15 | [A CONFIRMAR] Custo e regras de contas de loja (fase 3). Padrão: permanecer só PWA | 17/11/2026 | Briefing exige custo zero; custo não verificado | nenhuma fonte lida | dono do projeto |
+
+## Decisões da construção
+
+| ID | Decisão | Data | Motivo | Evidência | Responsável |
+|---|---|---|---|---|---|
+| D-01 | Node **24.13.0** no lugar do Node 22 [PROPOSTA]. Fixado em `.nvmrc` e `engines` | 17/11/2026 | Já instalado; LTS; aceito pelo Playwright e pela Supabase CLI | Playwright: "Node.js: latest 22.x, 24.x or 26.x" (https://playwright.dev/docs/intro, lida 17/11/2026). Supabase CLI: "requires Node.js 20 or later" (https://supabase.com/docs/guides/local-development/cli/getting-started, lida 17/11/2026) | dono do projeto |
+| D-02 | Repositório em `C:\dev\mariners-compass`, fora do OneDrive | 17/11/2026 | Evitar sincronização de `node_modules` e bloqueio de arquivos | — | dono do projeto |
+| D-03 | Nome `mariners-compass-meteo` no GitHub, no Vercel e no Supabase | 17/11/2026 | Escolha do dono | — | dono do projeto |
+| D-04 | **TypeScript 6.0.3** no repositório todo. O template do Vite (create-vite 9.3.4) trouxe o 7.0.2 | 17/11/2026 | `typescript-eslint@8.73.0` exige `typescript >=4.8.4 <6.1.0` (conflito de peer no `npm install`) | Relatório ERESOLVE do npm, 17/11/2026 | Claude Code |
+| D-05 | Supabase CLI como devDependency exata (`supabase@3.2.0`), via `npx supabase` | 17/11/2026 | Método documentado: "Install the CLI as a project dev dependency" e "Pin the version in package.json" | https://supabase.com/docs/guides/local-development/cli/getting-started (lida 17/11/2026) | Claude Code |
+| D-06 | Vercel CLI **global** (`npm i -g vercel`), versão 65.17.0 na instalação. Fora do `package-lock.json` | 17/11/2026 | A documentação só mostra instalação global; instalação local não documentada | https://vercel.com/docs/cli (lida 17/11/2026) | Claude Code |
+| D-07 | Risco aceito: `npm audit` acusa ReDoS no `picomatch` (GHSA-fc5q-39xc-vjpf), via `tinyglobby`/`fdir` em Vite e typescript-eslint | 17/11/2026 | Só ferramentas de desenvolvimento; nada entra no bundle do app. A única correção oferecida (`npm audit fix --force`) rebaixa o Vite para 6.2.7. Reavaliar a cada atualização de dependências | `npm audit`, 17/11/2026 | Claude Code |
+| D-08 | Deploy de produção automático desligado no Git (`vercel.json`: `git.deploymentEnabled.main = false`). Previews liberados | 17/11/2026 | Produção só com aprovação do dono (regra do projeto) | — | dono do projeto |
+| D-09 | Licença do código: **MIT**, copyright "Mariner's Compass Meteorologia" | 17/11/2026 | Escolha do dono (P3) | `LICENSE` | dono do projeto |
+
+## Resultado das tarefas
+
+| Tarefa | Resultado | Data | Evidência |
+|---|---|---|---|
+| T-17 | Windows 11 Pro build 26300 (exigido: 22631 ou superior); virtualização ativa no firmware (Ryzen 5 7600); 32 GB de RAM; serviço LanmanServer em Running/Automatic; WSL 3.0.5, versão padrão 2. Docker Desktop gratuito para "Personal use" e "Non-commercial open source projects". IDs do winget confirmados: `Docker.DockerDesktop` (4.99.0) e `GitHub.cli` (2.104.0). Node 24 aceito pelo Playwright. `.nvmrc`, `engines` e versões exatas criados (`.npmrc`: `save-exact=true`) | 17/11/2026 | https://docs.docker.com/desktop/setup/install/windows-install/ (lida 17/11/2026); `winget search`; `Get-ComputerInfo`; `wsl --status` |
+| T-10 | **Hobby permitido.** Termos do Vercel, seção "4. Hobby Plan" (âncora `#hobby-plan`): "You shall only use the Services under a Hobby plan for your personal or non-commercial use." O app é gratuito, sem anúncios, assinatura ou compras. Os termos não definem "commercial". A âncora `#fair-use` é citada pela página de diretrizes, mas a leitura dos termos não achou seção de uso justo. **Reconfirmar antes do primeiro deploy de produção (etapa 7)** | 17/11/2026 | https://vercel.com/legal/terms (lida 17/11/2026); https://vercel.com/docs/limits/fair-use-guidelines (lida 17/11/2026); https://vercel.com/docs/plans/hobby (lida 17/11/2026) |

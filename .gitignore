@@ -1,0 +1,28 @@
+# Dependências e builds
+node_modules/
+dist/
+dist-ssr/
+*.log
+
+# Segredos: nunca versionar. Só o modelo sem valores entra no Git.
+.env*
+!.env.example
+*.local
+
+# Vercel e Supabase (estado local)
+.vercel/
+supabase/.temp/
+supabase/.branches/
+
+# Maré: CSV e PDF da tábua nunca entram no Git (B3.2, AC-MVP-09)
+*.pdf
+*.csv
+tides/
+data-private/
+
+# Editores e sistema
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
