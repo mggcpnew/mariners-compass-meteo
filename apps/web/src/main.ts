@@ -64,45 +64,7 @@ function showStatus(key: MessageKey | null, params: Record<string, string> = {},
   const box = $('#status')
   box.hidden = key === null
   $('#status-text').textContent = key ? t(key, params) : ''
-  document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-unit]').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const unit = btn.dataset.unit
-    if (!isSpeedUnit(unit) || unit === state.unit) return
-    state.unit = unit
-    writePref('unit', unit)
-    renderMeta()
-    panel.setUnit(unit)
-  })
-})
-
-// Painel do ponto: toque no mapa pede o /point; o marcador fica na coordenada
-// arredondada que a previsão usa (o toque original é só o pedido).
-let marker: L.CircleMarker | null = null
-const panel = new PointPanel($('#point-panel'), closePanel)
-
-function closePanel(): void {
-  panel.close()
-  marker?.remove()
-  marker = null
-  $('#map').focus()
-}
-
-map.on('click', (e: L.LeafletMouseEvent) => {
-  $('#tap-hint').hidden = true
-  marker?.remove()
-  marker = L.circleMarker(e.latlng, { pane: PANES.marker, radius: 8, weight: 3, className: 'mc-point-marker', interactive: false }).addTo(map)
-  void panel.open(e.latlng.lat, e.latlng.lng, state.unit).then((point) => {
-    if (point && marker) marker.setLatLng([point.lat, point.lon])
-  })
-})
-
-// Teclado: Enter no mapa pede a previsão do centro.
-$('#map').addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter' || e.target !== $('#map')) return
-  map.fire('click', { latlng: map.getCenter() })
-})
-
-$('#status-retry').hidden = !retry
+  $('#status-retry').hidden = !retry
 }
 
 function errorKey(err: unknown): MessageKey {
@@ -217,6 +179,44 @@ document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-layer]').forEach((bt
     setActiveLayer()
     void loadFrames(true)
   })
+})
+
+document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-unit]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const unit = btn.dataset.unit
+    if (!isSpeedUnit(unit) || unit === state.unit) return
+    state.unit = unit
+    writePref('unit', unit)
+    renderMeta()
+    panel.setUnit(unit)
+  })
+})
+
+// Painel do ponto: toque no mapa pede o /point; o marcador fica na coordenada
+// arredondada que a previsão usa (o toque original é só o pedido).
+let marker: L.CircleMarker | null = null
+const panel = new PointPanel($('#point-panel'), closePanel)
+
+function closePanel(): void {
+  panel.close()
+  marker?.remove()
+  marker = null
+  $('#map').focus()
+}
+
+map.on('click', (e: L.LeafletMouseEvent) => {
+  $('#tap-hint').hidden = true
+  marker?.remove()
+  marker = L.circleMarker(e.latlng, { pane: PANES.marker, radius: 8, weight: 3, className: 'mc-point-marker', interactive: false }).addTo(map)
+  void panel.open(e.latlng.lat, e.latlng.lng, state.unit).then((point) => {
+    if (point && marker) marker.setLatLng([point.lat, point.lon])
+  })
+})
+
+// Teclado: Enter no mapa pede a previsão do centro.
+$('#map').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || e.target !== $('#map')) return
+  map.fire('click', { latlng: map.getCenter() })
 })
 
 $('#status-retry').addEventListener('click', () => void loadFrames(true))
