@@ -58,6 +58,7 @@ IDs mantidos da especificação. P-02, P-08, P-10, P-13 e P-14 viraram as tarefa
 | D-32 | Tempos máximos: 8 s por ida ao Supabase nas Functions (estouro = 503 `service_unavailable`, sem chamar a fonte) e 15 s por chamada ao Open-Meteo (estouro = falha daquela fonte) | 18/11/2026 | Evitar Function presa e consumo de CPU no Hobby | `packages/api/src/supabase-store.ts`; `packages/core/src/sources/index.ts` | Claude Code |
 | D-33 | `Cache-Control: public, max-age=60` nas respostas de sucesso do `/point` e do `/notices` (`POINT_CACHE_CONTROL_S`, `NOTICES_CACHE_S`) [PROPOSTA] | 18/11/2026 | Decisão do dono: menos CPU da Vercel sem servir dado velho por muito tempo | — | dono do projeto |
 | D-34 | `vercel build` local falha no Windows (`EPERM ... symlink`: criar symlink exige o Modo de Desenvolvedor). Empacotamento da Function validado no build do preview da Vercel; localmente, o handler roda direto no Node 24 contra o stack local | 18/11/2026 | Limitação do Windows, não do projeto | Log do `vercel build` (18/11/2026) | Claude Code |
+| D-35 | `engines.node` passa de `24.13.0` para `24.x`. O `.nvmrc` continua `24.13.0` (máquina local e CI via `setup-node`). Com `engine-strict=true`, a versão exata quebrava o `npm install` na Vercel, que só seleciona a versão major e instalou o Node 24.22.3 (`EBADENGINE`) | 18/11/2026 | A Vercel aceita só o major ("only major Node.js Version can be selected") | Log do deployment `dpl_2rBZQLS2m3eWsQrBqcvBBgytiNrc` (18/11/2026) | Claude Code |
 
 ## Resultado das tarefas
 
