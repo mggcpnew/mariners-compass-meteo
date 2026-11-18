@@ -46,6 +46,9 @@ export interface IngestStore {
   listRuns(): Promise<RunRow[]>
   /** Apaga a rodada (grid_layers sai em cascata). */
   deleteRun(runId: string): Promise<void>
-  /** Remove point_cache com fetched_at < pointBefore e quota_window com bucket_start < windowBefore. */
+  /**
+   * Remove point_cache com fetched_at < pointBefore, e quota_window e
+   * client_quota (hash do IP) com bucket_start < windowBefore.
+   */
   cleanupCaches(pointBefore: string, windowBefore: string): Promise<void>
 }

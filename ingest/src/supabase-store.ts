@@ -81,6 +81,7 @@ export function createSupabaseStore(url: string, serviceRoleKey: string, bucket:
     async cleanupCaches(pointBefore, windowBefore) {
       check(await db.from('point_cache').delete().lt('fetched_at', pointBefore), 'cleanup point_cache')
       check(await db.from('quota_window').delete().lt('bucket_start', windowBefore), 'cleanup quota_window')
+      check(await db.from('client_quota').delete().lt('bucket_start', windowBefore), 'cleanup client_quota')
     },
   }
 }

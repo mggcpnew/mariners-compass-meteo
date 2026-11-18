@@ -5,6 +5,9 @@ import { createOpenMeteoForecast, createOpenMeteoMarine, type FetchLike } from '
 import { createSimulatedForecast, createSimulatedMarine, type SimulatedOptions } from './simulated.ts'
 import { SourceConfigError, type ForecastSource, type MarineSource } from './types.ts'
 
+/** Tempo máximo de uma chamada à fonte; depois disso conta como falha. */
+export const SOURCE_TIMEOUT_MS = 15_000
+
 export interface Sources {
   forecast: ForecastSource
   marine: MarineSource
@@ -35,7 +38,7 @@ export function createSources(cfg: AppConfig, opts: CreateSourcesOptions = {}): 
   if (!forecastUrl || !marineUrl) {
     throw new SourceConfigError('OPENMETEO_FORECAST_URL and OPENMETEO_MARINE_URL are required when SOURCE_MODE=live')
   }
-  const fetchFn: FetchLike = opts.fetch ?? ((url) => fetch(url))
+  const fetchFn: FetchLike = opts.fetch ?? ((url) => fetch(url, { signal: AbortSignal.timeout(SOURCE_TIMEOUT_MS) }))
   return {
     forecast: createOpenMeteoForecast({ url: forecastUrl, model: modelForecast, fetch: fetchFn }),
     marine: createOpenMeteoMarine({ url: marineUrl, model: modelMarine, fetch: fetchFn }),

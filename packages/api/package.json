@@ -1,0 +1,13 @@
+{
+  "name": "@mariners-compass/api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mariners-compass/core": "0.0.0",
+    "@supabase/supabase-js": "2.119.0"
+  }
+}
