@@ -155,7 +155,7 @@ describe('runIngest', () => {
     const r = await runIngest(d)
     expect(r.status).toBe('closed')
     expect(r.attempts).toBe(710)
-    expect(slept.slice(0, 2)).toEqual([10, 20])
+    expect(slept.slice(0, 2)).toEqual([10, 30])
   })
 
   it('mais de INGEST_RETRY_MAX falhas seguidas: aborted', async () => {
@@ -164,6 +164,17 @@ describe('runIngest', () => {
     src.marine = flaky(src.marine, 3, () => new SourceUnavailableError('HTTP 503', 503))
     const r = await runIngest(deps(store, src, { concurrency: 1 }).d)
     expect(r).toMatchObject({ status: 'aborted', reason: 'source_error', attempts: 4 })
+  })
+
+  it('INGEST_RETRY_MAX=3: aguenta 3 falhas seguidas no mesmo pedido', async () => {
+    const store = new MemoryStore()
+    const src = sources()
+    src.marine = flaky(src.marine, 3, () => new SourceUnavailableError('connect timeout'))
+    const { d, slept } = deps(store, src, { concurrency: 1 })
+    d.cfg = loadConfig({ SOURCE_MODE: 'simulated', INGEST_RETRY_MAX: '3' })
+    const r = await runIngest(d)
+    expect(r).toMatchObject({ status: 'closed', attempts: 711 })
+    expect(slept.slice(0, 3)).toEqual([10, 30, 90])
   })
 
   it('429 da fonte: sem nova tentativa, aborted', async () => {

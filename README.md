@@ -47,7 +47,7 @@ Roda no GitHub Actions (`.github/workflows/ingest.yml`) a cada 6 h, às 02:15, 0
 
 1. Abre a rodada em `model_runs` (`open`). Supabase fora do ar: aborta sem chamar a fonte.
 2. Coleta previsão e ondas nos 273 pontos da grade ampla e nos 81 da baía: 708 chamadas, uma coordenada por requisição. Antes de **cada tentativa** HTTP, reserva 1 chamada em `reserve_calls` (fonte `openmeteo_ingest`, teto diário `INGEST_DAILY_BUDGET`, teto por minuto `INGEST_MAX_PER_MIN`).
-3. Até `INGEST_RETRY_MAX` retries com espera crescente. Erro 429 da fonte, teto diário ou mais de `INGEST_ROUND_BUDGET` chamadas: **aborta**.
+3. Até `INGEST_RETRY_MAX` retries (3 no GitHub) com espera de 15 s, 45 s e 135 s. Erro 429 da fonte, teto diário ou mais de `INGEST_ROUND_BUDGET` chamadas: **aborta**.
 4. Recorta os 57 quadros; se faltar hora, aborta. Grava 228 arquivos em `grids/runs/<run_time>/<região>/<camada>/<instante>.json` e as linhas em `grid_layers`; só então marca `closed`.
 5. Abortada: `aborted`, arquivos dela removidos, rodada anterior mantida, código de saída 1.
 6. Limpeza: mantém as 2 rodadas `closed` mais recentes; remove `point_cache` com mais de 24 h e `quota_window` com mais de 2 dias.

@@ -44,7 +44,7 @@ export interface IngestDeps {
   log?: (msg: string) => void
   /** Requisições simultâneas à fonte. */
   concurrency?: number
-  /** Espera base entre retries (cresce 2×). */
+  /** Espera base entre retries (cresce 3×). Padrão 15 s. */
   retryBaseMs?: number
 }
 
@@ -58,6 +58,8 @@ export interface IngestResult {
 }
 
 const GRID_SOURCE = 'openmeteo'
+const RETRY_BASE_MS = 15_000
+const RETRY_FACTOR = 3
 const KEEP_CLOSED_RUNS = 2
 const POINT_CACHE_MAX_AGE_MS = 24 * 3_600_000
 const QUOTA_WINDOW_MAX_AGE_MS = 2 * 24 * 3_600_000
@@ -111,8 +113,10 @@ export async function runIngest(deps: IngestDeps): Promise<IngestResult> {
       } catch (err) {
         // Erro de limite da fonte: sem nova tentativa imediata (B6).
         if (err instanceof SourceRateLimitError) throw new IngestAbort('rate_limited', err.message)
+        // Falha de rede ou HTTP de erro: espera crescente (15 s, 45 s, 135 s...).
+        // Os runners do GitHub têm timeouts de conexão esporádicos com o Open-Meteo.
         if (err instanceof SourceUnavailableError && attempt < cfg.ingest.retryMax) {
-          await sleep((deps.retryBaseMs ?? 2000) * 2 ** attempt)
+          await sleep((deps.retryBaseMs ?? RETRY_BASE_MS) * RETRY_FACTOR ** attempt)
           continue
         }
         throw new IngestAbort('source_error', (err as Error).message)
