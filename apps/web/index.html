@@ -25,6 +25,8 @@
           <p id="status-text"></p>
           <button type="button" id="status-retry" class="text-btn" data-i18n="error.retry" hidden></button>
         </div>
+        <p id="tap-hint" class="tap-hint" data-i18n="map.tapHint"></p>
+        <aside id="point-panel" class="point-panel" hidden></aside>
       </main>
 
       <section class="dock">
@@ -35,6 +37,11 @@
           <div class="segmented" role="group" data-i18n-aria-label="layer.group">
             <button type="button" class="seg-btn" data-layer="wind"><span class="seg-icon" data-icon="wind"></span><span data-i18n="layer.wind"></span></button>
             <button type="button" class="seg-btn" data-layer="waves"><span class="seg-icon" data-icon="waves"></span><span data-i18n="layer.waves"></span></button>
+          </div>
+          <div class="segmented" role="group" data-i18n-aria-label="unit.group">
+            <button type="button" class="seg-btn" data-unit="kn" data-i18n="unit.kn"></button>
+            <button type="button" class="seg-btn" data-unit="kmh" data-i18n="unit.kmh"></button>
+            <button type="button" class="seg-btn" data-unit="ms" data-i18n="unit.ms"></button>
           </div>
         </div>
       </section>

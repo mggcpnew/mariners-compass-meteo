@@ -1,5 +1,5 @@
-// Mapa de vento e ondas (etapa 6a). Painel do ponto (6b) e avisos, modal,
-// idiomas, modo noturno e PWA (6c) entram nas próximas entregas.
+// Mapa de vento e ondas (6a) e painel do ponto (6b). Avisos, modal, seletor de
+// idioma, modo noturno e PWA (6c) entram na próxima entrega.
 import 'leaflet/dist/leaflet.css'
 import './style.css'
 import { formatLocal } from '@mariners-compass/core'
@@ -9,7 +9,11 @@ import { chooseRegion } from './grid-choice.ts'
 import { applyI18n, detectLocale, getLocale, setLocale, t, type MessageKey } from './i18n.ts'
 import { compassRoseSvg, ICONS } from './icons.ts'
 import { renderLegend } from './legend.ts'
+import L from './leaflet-global.ts'
 import { addLand, createMap, INITIAL_CENTER, INITIAL_ZOOM, PANES } from './map.ts'
+import { isSpeedUnit } from './point-format.ts'
+import { PointPanel } from './point-panel.ts'
+import { readPref, writePref } from './prefs.ts'
 import type { SpeedUnit } from './scales.ts'
 import { currentMode, onModeChange } from './theme.ts'
 import { nearestFrame, TimeBar } from './timebar.ts'
@@ -33,7 +37,7 @@ document.querySelectorAll<HTMLElement>('[data-icon]').forEach((el) => {
 
 const state = {
   layer: 'wind' as LayerId,
-  unit: 'kn' as SpeedUnit,
+  unit: (isSpeedUnit(readPref('unit')) ? readPref('unit') : 'kn') as SpeedUnit,
   index: 0,
   region: null as RegionInfo | null,
   playing: false,
@@ -60,7 +64,45 @@ function showStatus(key: MessageKey | null, params: Record<string, string> = {},
   const box = $('#status')
   box.hidden = key === null
   $('#status-text').textContent = key ? t(key, params) : ''
-  $('#status-retry').hidden = !retry
+  document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-unit]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const unit = btn.dataset.unit
+    if (!isSpeedUnit(unit) || unit === state.unit) return
+    state.unit = unit
+    writePref('unit', unit)
+    renderMeta()
+    panel.setUnit(unit)
+  })
+})
+
+// Painel do ponto: toque no mapa pede o /point; o marcador fica na coordenada
+// arredondada que a previsão usa (o toque original é só o pedido).
+let marker: L.CircleMarker | null = null
+const panel = new PointPanel($('#point-panel'), closePanel)
+
+function closePanel(): void {
+  panel.close()
+  marker?.remove()
+  marker = null
+  $('#map').focus()
+}
+
+map.on('click', (e: L.LeafletMouseEvent) => {
+  $('#tap-hint').hidden = true
+  marker?.remove()
+  marker = L.circleMarker(e.latlng, { pane: PANES.marker, radius: 8, weight: 3, className: 'mc-point-marker', interactive: false }).addTo(map)
+  void panel.open(e.latlng.lat, e.latlng.lng, state.unit).then((point) => {
+    if (point && marker) marker.setLatLng([point.lat, point.lon])
+  })
+})
+
+// Teclado: Enter no mapa pede a previsão do centro.
+$('#map').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || e.target !== $('#map')) return
+  map.fire('click', { latlng: map.getCenter() })
+})
+
+$('#status-retry').hidden = !retry
 }
 
 function errorKey(err: unknown): MessageKey {
@@ -83,8 +125,11 @@ function renderMeta(): void {
   $('#attribution').textContent = meta?.attribution.join(' ') ?? ''
   $('#resolution').textContent = state.region ? t(state.region.id === 'bay' ? 'resolution.bay' : 'resolution.wide') : ''
   renderLegend($('#legend'), state.layer, currentMode(), state.unit)
-  document.querySelectorAll<HTMLButtonElement>('.seg-btn').forEach((b) => {
+  document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-layer]').forEach((b) => {
     b.setAttribute('aria-pressed', String(b.dataset.layer === state.layer))
+  })
+  document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-unit]').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.unit === state.unit))
   })
 }
 
@@ -164,7 +209,7 @@ function stopPlay(): void {
   timebar.setPlaying(false)
 }
 
-document.querySelectorAll<HTMLButtonElement>('.seg-btn').forEach((btn) => {
+document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-layer]').forEach((btn) => {
   btn.addEventListener('click', () => {
     const layer = btn.dataset.layer as LayerId
     if (layer === state.layer) return
