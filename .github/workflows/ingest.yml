@@ -4,10 +4,10 @@ name: Ingestão
 
 on:
   workflow_dispatch:
-  # Ligado só depois da 1ª rodada real aprovada pelo dono (etapa 4.7).
+  # Ligado em 18/11/2026, após a 1ª rodada real completa (execução 44216255937).
   # Horários fora de 21:01-23:59 UTC (P-16). Em Brasília: 23:15, 05:15, 11:15, 17:15.
-  # schedule:
-  #   - cron: '15 2,8,14,20 * * *'
+  schedule:
+    - cron: '15 2,8,14,20 * * *'
 
 permissions:
   contents: read
