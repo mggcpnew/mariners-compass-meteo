@@ -13,20 +13,33 @@ function bayGridMinZoom(): number {
   return n
 }
 
+type Middlewares = { use(path: string, fn: (req: import('node:http').IncomingMessage & { originalUrl?: string }, res: import('node:http').ServerResponse) => void): void }
+
+async function mountDevApi(middlewares: Middlewares): Promise<void> {
+  const { createDevApi } = await import('./dev/dev-api.ts')
+  const handle = createDevApi(fileURLToPath(new URL('./public/data/land.geojson', import.meta.url)))
+  middlewares.use('/api/v1', async (req, res) => {
+    const url = new URL(req.originalUrl ?? req.url ?? '/', 'http://localhost')
+    const response = await handle(new Request(url, { method: req.method }))
+    res.statusCode = response.status
+    response.headers.forEach((v, k) => res.setHeader(k, v))
+    res.end(Buffer.from(await response.arrayBuffer()))
+  })
+}
+
+/**
+ * API simulada no `vite dev` e, só com MC_E2E=1, no `vite preview` (E2E sobre o
+ * build de produção). A Vercel serve o dist/ estático e nunca roda o preview.
+ */
 function devApi(): Plugin {
   return {
     name: 'mariners-compass-dev-api',
     apply: 'serve',
     async configureServer(server) {
-      const { createDevApi } = await import('./dev/dev-api.ts')
-      const handle = createDevApi(fileURLToPath(new URL('./public/data/land.geojson', import.meta.url)))
-      server.middlewares.use('/api/v1', async (req, res) => {
-        const url = new URL(req.originalUrl ?? req.url ?? '/', 'http://localhost')
-        const response = await handle(new Request(url, { method: req.method }))
-        res.statusCode = response.status
-        response.headers.forEach((v, k) => res.setHeader(k, v))
-        res.end(Buffer.from(await response.arrayBuffer()))
-      })
+      await mountDevApi(server.middlewares)
+    },
+    async configurePreviewServer(server) {
+      if (process.env.MC_E2E === '1') await mountDevApi(server.middlewares)
     },
   }
 }

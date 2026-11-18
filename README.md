@@ -37,6 +37,8 @@ No `npm run dev`, a API v1 roda dentro do Vite (`apps/web/dev/dev-api.ts`) com o
 | `npm run build` | Gera `apps/web/dist` |
 | `npm run lint` | ESLint em todo o repositório |
 | `npm test` | Testes unitários (Vitest); nenhum usa rede |
+| `npm run e2e` | E2E (Playwright) sobre o build de produção com a API simulada; inclui axe (WCAG 2.1 AA). Antes, uma vez: `npx playwright install chromium` |
+| `npm run e2e:lighthouse` | Nota de acessibilidade do Lighthouse (mínimo `LIGHTHOUSE_A11Y_MIN`, padrão 90). Sem argumento, usa o build local (rode `npm run build` antes); com uma URL, audita essa URL |
 | `npm run typecheck` | Verificação de tipos (`packages/core`, `packages/api`, `ingest`, `scripts`, `apps/web`) |
 | `npm run ingest` | Uma rodada do job de ingestão (variáveis do ambiente) |
 | `npm run notice:add` / `notice:checked` | Registro manual de avisos da Marinha e da conferência do boletim |

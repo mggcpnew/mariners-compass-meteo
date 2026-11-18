@@ -3,6 +3,8 @@ node_modules/
 dist/
 dist-ssr/
 *.log
+playwright-report/
+test-results/
 
 # Segredos: nunca versionar. Só o modelo sem valores entra no Git.
 .env*
