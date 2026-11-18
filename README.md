@@ -6,7 +6,7 @@ Gratuito, sem anúncios e sem assinatura. Sem vínculo oficial com o Iate Clube 
 
 > **Aviso:** este app não substitui os boletins e avisos oficiais da Marinha do Brasil. Ele mostra previsões de modelos numéricos, não medições. Consulte sempre o boletim oficial antes de sair.
 
-**Estado:** etapa 2 de 7 (banco de dados). Ainda não há funcionalidade para o usuário. Plano: [docs/PLANO-EXECUCAO.md](docs/PLANO-EXECUCAO.md). Especificação: [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
+**Estado:** etapa 3 de 7 (adaptadores de fonte e lógica comum). Ainda não há funcionalidade para o usuário. Plano: [docs/PLANO-EXECUCAO.md](docs/PLANO-EXECUCAO.md). Especificação: [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
 
 ## Pré-requisitos (Windows 11)
 
@@ -34,7 +34,8 @@ npm run dev                    # front em modo de desenvolvimento
 | `npm run dev` | Sobe o front (Vite) |
 | `npm run build` | Gera `apps/web/dist` |
 | `npm run lint` | ESLint em todo o repositório |
-| `npm test` | Testes unitários (Vitest) |
+| `npm test` | Testes unitários (Vitest); nenhum usa rede |
+| `npm run typecheck` | Verificação de tipos do `packages/core` |
 | `npm run notice:add` / `notice:checked` | Registro de avisos da Marinha (implementados na etapa 5) |
 
 Antes de cada push: `npm run lint`, `npm test` e `npm run build` passando.
@@ -64,6 +65,7 @@ npx supabase stop
 apps/web/            front-end (Vite + TypeScript, sem framework de UI)
 api/v1/              Vercel Functions (/api/v1/*)
 ingest/              job de ingestão (GitHub Actions)
+packages/core/       código comum: adaptadores de fonte, conversões, tempo, quadros, vencimento
 supabase/            config da CLI e migrações
 scripts/             avisos, importação local de maré, verificações de CI
 docs/                especificação, plano, pendências, modelos
@@ -73,6 +75,27 @@ docs/                especificação, plano, pendências, modelos
 ## Variáveis de ambiente
 
 Todas estão em [.env.example](.env.example), com os padrões da especificação (B9). Segredos (`SUPABASE_SERVICE_ROLE_KEY`, `VAPID_PRIVATE_KEY`) ficam só em `.env.local`, nos secrets do GitHub Actions e no Vercel. Nunca no repositório.
+
+## Fontes de dados (adaptadores)
+
+`packages/core` tem os adaptadores do Open-Meteo (previsão e Marine) e uma fonte simulada. `SOURCE_MODE` é **obrigatório**: `live` usa o Open-Meteo, `simulated` gera dados determinísticos sem rede (dev e testes). Em `live`, sem `OPENMETEO_FORECAST_URL` e `OPENMETEO_MARINE_URL` o app falha antes de chamar a fonte.
+
+- Endpoints (T-07, lidos em 17/11/2026): `https://api.open-meteo.com/v1/forecast` e `https://marine-api.open-meteo.com/v1/marine`.
+- Uma coordenada por requisição. A resposta não informa o modelo: sem `OPENMETEO_MODEL_*`, a rodada grava `auto`.
+- Tempo canônico: `YYYY-MM-DDTHH:mm:ssZ`. Ausente é `null`, nunca zero. Em terra, as ondas vêm `null` (T-15).
+- Detalhes e sondagens: [docs/MODELOS.md](docs/MODELOS.md).
+
+### Arquivo de vento para o leaflet-velocity (T-01)
+
+Lido no demo da tag `v2.1.4` (o pacote do npm não traz `demo/`) e no código do plugin:
+
+| Campo | U | V |
+|---|---|---|
+| `parameterCategory` | 2 | 2 |
+| `parameterNumber` | 2 | 3 |
+| `parameterUnit` | `m.s-1` | `m.s-1` |
+
+`dx` e `dy` positivos, `la1 > la2` (norte para sul). `data[]` plano, por linhas, de norte para sul e de oeste para leste. O plugin data o quadro por `refTime` + `forecastTime`. Constantes em `packages/core/src/grid/velocity-header.ts`.
 
 ## Ressalvas e valores provisórios
 
