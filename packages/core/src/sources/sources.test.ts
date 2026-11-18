@@ -97,11 +97,11 @@ describe('Open-Meteo real (fetch falso)', () => {
 
   it('falha de rede e resposta malformada viram SourceUnavailableError', async () => {
     const down = vi.fn<FetchLike>(async () => {
-      throw new Error('ECONNRESET')
+      throw new TypeError('fetch failed', { cause: Object.assign(new Error('connect timeout'), { code: 'UND_ERR_CONNECT_TIMEOUT' }) })
     })
     await expect(
       createOpenMeteoForecast({ url: FORECAST_URL, model: null, fetch: down }).fetchPoint({ lat: 0, lon: 0, days: 9 }),
-    ).rejects.toThrow(SourceUnavailableError)
+    ).rejects.toThrow('fetch failed <- UND_ERR_CONNECT_TIMEOUT: connect timeout')
     const bad = fakeFetch(200, { latitude: 0, longitude: 0, hourly: { time: ['2026-11-17T00:00'], wind_speed_10m: [] } })
     await expect(
       createOpenMeteoForecast({ url: FORECAST_URL, model: null, fetch: bad }).fetchPoint({ lat: 0, lon: 0, days: 9 }),

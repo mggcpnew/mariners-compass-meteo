@@ -30,6 +30,19 @@ export interface OpenMeteoOptions {
   fetch: FetchLike
 }
 
+/** Mensagem com a causa encadeada (o fetch do Node põe o motivo real em `cause`). */
+function describeError(err: unknown): string {
+  const parts: string[] = []
+  let cur: unknown = err
+  for (let depth = 0; cur && depth < 4; depth++) {
+    const e = cur as { message?: unknown; code?: unknown; cause?: unknown }
+    const code = typeof e.code === 'string' ? `${e.code}: ` : ''
+    parts.push(`${code}${String(e.message ?? cur)}`)
+    cur = e.cause
+  }
+  return parts.join(' <- ')
+}
+
 function validate(req: PointRequest, variableCount: number): void {
   if (!Number.isFinite(req.lat) || req.lat < -90 || req.lat > 90) throw new SourceRequestError('invalid latitude')
   if (!Number.isFinite(req.lon) || req.lon < -180 || req.lon > 180) throw new SourceRequestError('invalid longitude')
@@ -73,7 +86,7 @@ async function request<V extends string>(
   try {
     res = await opts.fetch(url)
   } catch (err) {
-    throw new SourceUnavailableError(`Open-Meteo ${kind}: network error (${(err as Error).message})`)
+    throw new SourceUnavailableError(`Open-Meteo ${kind}: network error (${describeError(err)})`)
   }
   if (res.status === 429) throw new SourceRateLimitError(`Open-Meteo ${kind}: rate limited (429)`)
   if (!res.ok) throw new SourceUnavailableError(`Open-Meteo ${kind}: HTTP ${res.status}`, res.status)
