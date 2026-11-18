@@ -25,17 +25,19 @@ Gratuito, sem anúncios e sem assinatura. Sem vínculo oficial com o Iate Clube 
 ```powershell
 npm ci
 copy .env.example .env.local   # preencha os valores
-npx supabase start             # exige o Docker Desktop aberto
-npm run dev                    # front em modo de desenvolvimento
+npx supabase start             # exige o Docker Desktop aberto (banco, job e testes pgTAP)
+npm run dev                    # front + API v1 simulada em http://localhost:5173
 ```
+
+No `npm run dev`, a API v1 roda dentro do Vite (`apps/web/dev/dev-api.ts`) com o mesmo handler da produção, uma rodada simulada em memória e `SOURCE_MODE=simulated`. Não precisa de Supabase, Docker nem `vercel dev` (que falha no Windows, D-34), e nada chama fonte externa. O build de produção não inclui esse código.
 
 | Comando | O que faz |
 |---|---|
-| `npm run dev` | Sobe o front (Vite) |
+| `npm run dev` | Sobe o front (Vite) com a API v1 simulada |
 | `npm run build` | Gera `apps/web/dist` |
 | `npm run lint` | ESLint em todo o repositório |
 | `npm test` | Testes unitários (Vitest); nenhum usa rede |
-| `npm run typecheck` | Verificação de tipos (`packages/core`, `ingest`, `scripts`) |
+| `npm run typecheck` | Verificação de tipos (`packages/core`, `packages/api`, `ingest`, `scripts`, `apps/web`) |
 | `npm run ingest` | Uma rodada do job de ingestão (variáveis do ambiente) |
 | `npm run notice:add` / `notice:checked` | Registro manual de avisos da Marinha e da conferência do boletim |
 
@@ -130,6 +132,24 @@ docs/                especificação, plano, pendências, modelos
 .github/workflows/   ingestão, CI, lembrete de avisos, heartbeat
 ```
 
+## Front-end (`apps/web`)
+
+- Mapa Leaflet 1.9.4 **sem tiles** (AC-MVP-10): fundo da cor do mar e terra do Natural Earth 10m recortada em `apps/web/public/data/land.geojson` (cerca de 130 KB).
+- Vento: partículas do leaflet-velocity 2.1.4 (T-11: funciona com o Leaflet 1.9.4 sem patch; o plugin usa o `L` global, exposto em `src/leaflet-global.ts`).
+- Ondas: camada própria em Canvas (`src/waves-layer.ts`), interpolação bilinear com a regra de nulos do B6 e setas no sentido de propagação.
+- Grade: baía (`-44,-24,-42,-22`, 0,25°) com zoom a partir de `BAY_GRID_MIN_ZOOM` (variável de **build**, padrão 9) e centro dentro do bbox da baía; senão a ampla (AC-MVP-27).
+- Barra de tempo: quadros de 3 h no fuso do aparelho, play e pré-carga de 3 quadros à frente.
+- Vista inicial: Enseada de São Francisco (-22,915, -43,105), zoom 10 (T-05).
+- Textos em `apps/web/src/i18n/{pt-BR,en}.json`; o teste confere as mesmas chaves nos dois idiomas.
+
+Para regenerar a costa (arquivos de entrada fora do repositório):
+
+```powershell
+# baixe ne_10m_land.geojson e ne_10m_minor_islands.geojson da tag v5.1.2 de
+# https://github.com/nvkelso/natural-earth-vector (pasta geojson/)
+node scripts/coast.ts <ne_10m_land.geojson> <ne_10m_minor_islands.geojson>
+```
+
 ## Variáveis de ambiente
 
 Todas estão em [.env.example](.env.example), com os padrões da especificação (B9). Segredos (`SUPABASE_SERVICE_ROLE_KEY`, `VAPID_PRIVATE_KEY`) ficam só em `.env.local`, nos secrets do GitHub Actions e no Vercel. Nunca no repositório.
@@ -165,7 +185,8 @@ Lido no demo da tag `v2.1.4` (o pacote do npm não traz `demo/`) e no código do
 
 - Previsão: "Dados: Open-Meteo.com (CC BY 4.0)". Uso não comercial.
 - Avisos: "Fonte: Marinha do Brasil, CHM/DHN".
-- Costa: "Made with Natural Earth."
+- Costa: "Made with Natural Earth." (domínio público; Natural Earth 10m, v5.1.2).
+- Licenças de terceiros publicadas com o app em `/licenses/` (Leaflet, leaflet-velocity).
 
 ## Licença
 

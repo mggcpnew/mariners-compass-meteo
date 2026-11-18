@@ -2,11 +2,53 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#F4EBD9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#061629" media="(prefers-color-scheme: dark)" />
     <title>Mariner's Compass Meteorologia</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div class="app">
+      <header class="topbar">
+        <span class="brand-mark" id="brand-mark" aria-hidden="true"></span>
+        <div class="brand-text">
+          <h1 class="brand-title" data-i18n="app.title"></h1>
+          <p class="source" id="source-label"></p>
+        </div>
+      </header>
+
+      <main class="map-wrap">
+        <div id="map" class="map" role="region" data-i18n-aria-label="map.label"></div>
+        <button type="button" id="recenter" class="recenter" data-i18n-aria-label="map.recenter" data-i18n-title="map.recenter"></button>
+        <div id="status" class="status" role="status" aria-live="polite" hidden>
+          <p id="status-text"></p>
+          <button type="button" id="status-retry" class="text-btn" data-i18n="error.retry" hidden></button>
+        </div>
+      </main>
+
+      <section class="dock">
+        <p id="resolution" class="resolution"></p>
+        <div id="legend" class="legend"></div>
+        <div id="timebar" class="timebar" role="group" data-i18n-aria-label="time.group"></div>
+        <div class="actions">
+          <div class="segmented" role="group" data-i18n-aria-label="layer.group">
+            <button type="button" class="seg-btn" data-layer="wind"><span class="seg-icon" data-icon="wind"></span><span data-i18n="layer.wind"></span></button>
+            <button type="button" class="seg-btn" data-layer="waves"><span class="seg-icon" data-icon="waves"></span><span data-i18n="layer.waves"></span></button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <p class="disclaimer" data-i18n="footer.disclaimer"></p>
+        <p class="credits">
+          <span id="attribution"></span>
+          <span data-i18n="credit.naturalEarth"></span>
+          <span data-i18n="coast.simplified"></span>
+          <a href="/licenses/" data-i18n="credit.licenses"></a>
+        </p>
+      </footer>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

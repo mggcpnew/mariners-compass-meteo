@@ -11,6 +11,10 @@ export default defineConfig({
       '@mariners-compass/api': src('api'),
     },
   },
+  // Variável de build do front (apps/web/vite.config.ts) com o valor padrão.
+  define: {
+    __BAY_GRID_MIN_ZOOM__: '9',
+  },
   test: {
     include: ['**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
