@@ -2,5 +2,12 @@
   "name": "@mariners-compass/ingest",
   "private": true,
   "version": "0.0.0",
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "ingest": "node src/main.ts"
+  },
+  "dependencies": {
+    "@mariners-compass/core": "0.0.0",
+    "@supabase/supabase-js": "2.119.0"
+  }
 }

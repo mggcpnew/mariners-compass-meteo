@@ -6,7 +6,7 @@ Gratuito, sem anúncios e sem assinatura. Sem vínculo oficial com o Iate Clube 
 
 > **Aviso:** este app não substitui os boletins e avisos oficiais da Marinha do Brasil. Ele mostra previsões de modelos numéricos, não medições. Consulte sempre o boletim oficial antes de sair.
 
-**Estado:** etapa 3 de 7 (adaptadores de fonte e lógica comum). Ainda não há funcionalidade para o usuário. Plano: [docs/PLANO-EXECUCAO.md](docs/PLANO-EXECUCAO.md). Especificação: [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
+**Estado:** etapa 4 de 7 (job de ingestão e workflows). Ainda não há funcionalidade para o usuário. Plano: [docs/PLANO-EXECUCAO.md](docs/PLANO-EXECUCAO.md). Especificação: [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
 
 ## Pré-requisitos (Windows 11)
 
@@ -35,10 +35,42 @@ npm run dev                    # front em modo de desenvolvimento
 | `npm run build` | Gera `apps/web/dist` |
 | `npm run lint` | ESLint em todo o repositório |
 | `npm test` | Testes unitários (Vitest); nenhum usa rede |
-| `npm run typecheck` | Verificação de tipos do `packages/core` |
+| `npm run typecheck` | Verificação de tipos (`packages/core`, `ingest`, `scripts`) |
+| `npm run ingest` | Uma rodada do job de ingestão (variáveis do ambiente) |
 | `npm run notice:add` / `notice:checked` | Registro de avisos da Marinha (implementados na etapa 5) |
 
-Antes de cada push: `npm run lint`, `npm test` e `npm run build` passando.
+Antes de cada push: `npm run lint`, `npm run typecheck`, `npm test` e `npm run build` passando.
+
+## Job de ingestão (`ingest/`)
+
+Roda no GitHub Actions (`.github/workflows/ingest.yml`) a cada 6 h, às 02:15, 08:15, 14:15 e 20:15 UTC (fora da janela 21:01–23:59 UTC; ver P-16). Cada rodada:
+
+1. Abre a rodada em `model_runs` (`open`). Supabase fora do ar: aborta sem chamar a fonte.
+2. Coleta previsão e ondas nos 273 pontos da grade ampla e nos 81 da baía: 708 chamadas, uma coordenada por requisição. Antes de **cada tentativa** HTTP, reserva 1 chamada em `reserve_calls` (fonte `openmeteo_ingest`, teto diário `INGEST_DAILY_BUDGET`, teto por minuto `INGEST_MAX_PER_MIN`).
+3. Até `INGEST_RETRY_MAX` retries com espera crescente. Erro 429 da fonte, teto diário ou mais de `INGEST_ROUND_BUDGET` chamadas: **aborta**.
+4. Recorta os 57 quadros; se faltar hora, aborta. Grava 228 arquivos em `grids/runs/<run_time>/<região>/<camada>/<instante>.json` e as linhas em `grid_layers`; só então marca `closed`.
+5. Abortada: `aborted`, arquivos dela removidos, rodada anterior mantida, código de saída 1.
+6. Limpeza: mantém as 2 rodadas `closed` mais recentes; remove `point_cache` com mais de 24 h e `quota_window` com mais de 2 dias.
+
+Rodar localmente contra o stack local (dados simulados):
+
+```powershell
+npx supabase start
+$env:SOURCE_MODE='simulated'; $env:SUPABASE_URL='http://127.0.0.1:54321'
+$env:SUPABASE_SERVICE_ROLE_KEY='<SERVICE_ROLE_KEY de "npx supabase status">'
+npm run ingest
+```
+
+## Workflows do GitHub Actions
+
+| Workflow | Quando | O que faz |
+|---|---|---|
+| `ci.yml` | push no `main` e PR | lint, tipos, testes, build, sem maré no Git (AC-MVP-09), sem chave de serviço (AC-MVP-13), pgTAP no stack local (AC-MVP-14) |
+| `ingest.yml` | cron a cada 6 h e manual | job de ingestão |
+| `notice-reminder.yml` | diário, 11:00 UTC | abre ou atualiza a issue "Conferir avisos da Marinha" se a última conferência passar de `NOTICE_CHECK_MAX_AGE_H` |
+| `heartbeat.yml` | dia 1 de cada mês | commit do bot em `.github/heartbeat.txt`, para o GitHub não desativar os agendamentos após 60 dias |
+
+Configuração no GitHub (Settings > Secrets and variables > Actions): secret `SUPABASE_SERVICE_ROLE_KEY`; variables `SUPABASE_URL`, `SOURCE_MODE=live`, `OPENMETEO_FORECAST_URL`, `OPENMETEO_MARINE_URL`. As demais variáveis do B9 são opcionais (vazio = padrão). Actions fixadas por SHA; `heartbeat.yml` é o único com permissão de escrita.
 
 ## Banco de dados (Supabase)
 
@@ -64,7 +96,7 @@ npx supabase stop
 ```text
 apps/web/            front-end (Vite + TypeScript, sem framework de UI)
 api/v1/              Vercel Functions (/api/v1/*)
-ingest/              job de ingestão (GitHub Actions)
+ingest/              job de ingestão (GitHub Actions; Node 24 roda o TypeScript direto)
 packages/core/       código comum: adaptadores de fonte, conversões, tempo, quadros, vencimento
 supabase/            config da CLI e migrações
 scripts/             avisos, importação local de maré, verificações de CI

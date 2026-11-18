@@ -1,0 +1,46 @@
+# Job de ingestão (B6): coleta as grades wide e bay no Open-Meteo, grava os
+# 228 arquivos no Storage privado e fecha a rodada. Só publica rodada completa.
+name: Ingestão
+
+on:
+  workflow_dispatch:
+  # Ligado só depois da 1ª rodada real aprovada pelo dono (etapa 4.7).
+  # Horários fora de 21:01-23:59 UTC (P-16). Em Brasília: 23:15, 05:15, 11:15, 17:15.
+  # schedule:
+  #   - cron: '15 2,8,14,20 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SOURCE_MODE: ${{ vars.SOURCE_MODE }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      OPENMETEO_FORECAST_URL: ${{ vars.OPENMETEO_FORECAST_URL }}
+      OPENMETEO_MARINE_URL: ${{ vars.OPENMETEO_MARINE_URL }}
+      OPENMETEO_MODEL_FORECAST: ${{ vars.OPENMETEO_MODEL_FORECAST }}
+      OPENMETEO_MODEL_MARINE: ${{ vars.OPENMETEO_MODEL_MARINE }}
+      FORECAST_DAYS: ${{ vars.FORECAST_DAYS }}
+      INGEST_ROUND_BUDGET: ${{ vars.INGEST_ROUND_BUDGET }}
+      INGEST_DAILY_BUDGET: ${{ vars.INGEST_DAILY_BUDGET }}
+      INGEST_RETRY_MAX: ${{ vars.INGEST_RETRY_MAX }}
+      INGEST_MAX_PER_MIN: ${{ vars.INGEST_MAX_PER_MIN }}
+      GRID_BUCKET: ${{ vars.GRID_BUCKET }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run ingest

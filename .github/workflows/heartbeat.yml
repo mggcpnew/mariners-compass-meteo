@@ -1,0 +1,27 @@
+# Heartbeat mensal [PROPOSTA]: um commit do bot mantém o repositório ativo para
+# o GitHub não desativar os agendamentos após 60 dias sem atividade.
+# Único workflow com permissão de escrita no conteúdo.
+name: Heartbeat
+
+on:
+  schedule:
+    - cron: '0 12 1 * *' # dia 1 de cada mês, 09:00 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Registra a data e faz o commit
+        run: |
+          date -u +%Y-%m-%dT%H:%M:%SZ > .github/heartbeat.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/heartbeat.txt
+          git commit -m 'chore: heartbeat mensal do agendamento'
+          git push

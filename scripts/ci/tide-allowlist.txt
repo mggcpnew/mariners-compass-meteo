@@ -1,0 +1,4 @@
+# Fixtures legítimas liberadas da verificação de dados de maré (AC-MVP-09).
+# Só dados sintéticos de teste. Uma entrada por linha, sempre com comentário:
+#   fixtures/tide-sample.json  # dados sintéticos para o teste X
+# Toda alteração passa por revisão do dono do projeto.
