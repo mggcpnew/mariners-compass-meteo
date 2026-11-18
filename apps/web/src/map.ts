@@ -15,7 +15,7 @@ export const INITIAL_ZOOM = 10
 const MAX_BOUNDS = L.latLngBounds([-37, -56], [7, -28])
 
 /** Panes em ordem de desenho: ondas embaixo, terra cobre a borda das ondas, vento por cima. */
-export const PANES = { waves: 'mc-waves', land: 'mc-land', wind: 'mc-wind' } as const
+export const PANES = { waves: 'mc-waves', land: 'mc-land', wind: 'mc-wind', marker: 'mc-marker' } as const
 
 export function createMap(el: HTMLElement): L.Map {
   const map = L.map(el, {
@@ -27,7 +27,7 @@ export function createMap(el: HTMLElement): L.Map {
     maxBoundsViscosity: 1,
     zoomSnap: 1,
   }).setView(INITIAL_CENTER, INITIAL_ZOOM)
-  const z = { waves: 300, land: 350, wind: 420 }
+  const z = { waves: 300, land: 350, wind: 420, marker: 600 }
   for (const [key, name] of Object.entries(PANES)) {
     const pane = map.createPane(name)
     pane.style.zIndex = String(z[key as keyof typeof z])

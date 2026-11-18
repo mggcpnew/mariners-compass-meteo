@@ -13,6 +13,10 @@ export default tseslint.config(
     languageOptions: { globals: globals.browser },
   },
   {
+    files: ['apps/web/public/sw.js'],
+    languageOptions: { globals: globals.serviceworker },
+  },
+  {
     files: ['api/**/*.ts', 'ingest/**/*.ts', 'packages/**/*.ts', 'scripts/**/*.ts', '*.js', '*.ts'],
     languageOptions: { globals: globals.node },
   },

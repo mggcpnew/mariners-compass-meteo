@@ -93,6 +93,51 @@ export function gridUrl(layer: LayerId, runTime: string, time: string, region: R
   return `/api/v1/grid?${q}`
 }
 
+export type PointSeries =
+  | 'wind_speed_10m'
+  | 'wind_direction_10m'
+  | 'wind_gusts_10m'
+  | 'wave_height'
+  | 'wave_direction'
+  | 'wave_period'
+
+export interface PointResponse {
+  meta: {
+    source: string
+    model: string
+    updated_at: string
+    units: Record<string, string>
+    status: 'ok' | 'partial' | 'stale'
+    attribution: string[]
+    /** Coordenada arredondada usada pela previsão. */
+    point: { lat: number; lon: number }
+    requested: { lat: number; lon: number }
+  }
+  hourly: { time: string[] } & Partial<Record<PointSeries, (number | null)[]>>
+}
+
+/** Variáveis que o painel mostra (vento em nós, ondas totais). */
+export const POINT_VARS: readonly PointSeries[] = [
+  'wind_speed_10m',
+  'wind_direction_10m',
+  'wind_gusts_10m',
+  'wave_height',
+  'wave_direction',
+  'wave_period',
+]
+
+/** 2 casas (~1 km): o servidor arredonda de novo (POINT_ROUND_DEG); URLs repetidas aproveitam o cache. */
+const coord = (x: number) => (Math.round(x * 100) / 100).toFixed(2)
+
+export function pointUrl(lat: number, lon: number, hours = 168): string {
+  const q = new URLSearchParams({ lat: coord(lat), lon: coord(lon), hours: String(hours), vars: POINT_VARS.join(',') })
+  return `/api/v1/point?${q}`
+}
+
+export function getPoint(lat: number, lon: number, fetchFn: FetchLike = defaultFetch): Promise<PointResponse> {
+  return getJson(pointUrl(lat, lon), fetchFn)
+}
+
 export function getGrid(
   layer: LayerId,
   runTime: string,
@@ -101,4 +146,8 @@ export function getGrid(
   fetchFn: FetchLike = defaultFetch,
 ): Promise<GridRecord[]> {
   return getJson(gridUrl(layer, runTime, time, region), fetchFn)
+}
+
+export function getNotices(fetchFn: FetchLike = defaultFetch): Promise<import('./notices.ts').NoticesResponse> {
+  return getJson('/api/v1/notices', fetchFn)
 }

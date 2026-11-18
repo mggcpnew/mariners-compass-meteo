@@ -15,6 +15,11 @@
   --map-land: #eadcbf;
   --map-coast: #6b7d8f;
   --map-arrow: rgba(11, 37, 69, 0.75);
+  /* Meteograma: validado com validate_palette.js (dataviz) sobre --surface. */
+  --series-wind: #0a6c94;
+  --series-gust: #d2561e;
+  --series-wave: #0a6c94;
+  --grid: rgba(11, 37, 69, 0.12);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -44,6 +49,10 @@
     --map-land: #2b2a26;
     --map-coast: #5f7a94;
     --map-arrow: rgba(232, 241, 245, 0.8);
+    --series-wind: #28a0bc;
+    --series-gust: #e06a30;
+    --series-wave: #28a0bc;
+    --grid: rgba(232, 241, 245, 0.12);
   }
 }
 
@@ -61,6 +70,11 @@
   --map-land: #1a0000;
   --map-coast: #8c0000;
   --map-arrow: rgba(255, 77, 77, 0.85);
+  /* Noturno: um vermelho só; a rajada se distingue pelo tracejado e pelo rótulo. */
+  --series-wind: #ff4d4d;
+  --series-gust: #c00000;
+  --series-wave: #ff4d4d;
+  --grid: rgba(255, 77, 77, 0.18);
 }
 
 *,
@@ -88,6 +102,31 @@ body {
 button {
   font: inherit;
   color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+button:not(:disabled):active {
+  filter: brightness(0.92);
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-2);
+  top: -100px;
+  z-index: 1000;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 700;
+}
+.skip-link:focus {
+  top: var(--space-2);
+}
+.dock:focus {
+  outline: none;
 }
 
 :focus-visible {
@@ -97,7 +136,7 @@ button {
 
 .app {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   height: 100dvh;
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
@@ -122,7 +161,129 @@ button {
 }
 
 .brand-text {
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+.top-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+.segmented-sm .seg-btn {
+  min-width: var(--target);
+  padding: 0 var(--space-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.top-actions .icon-btn[aria-pressed='true'] {
+  background: var(--text);
+  color: var(--bg);
+}
+.top-actions .icon-btn svg {
+  fill: currentColor;
+}
+
+/* Faixa de avisos oficiais (B3.3): sempre visível, com o aviso fixo do B10 */
+.notices {
+  display: grid;
+  gap: var(--space-1);
+  max-height: 30vh;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  font-size: var(--fs-sm);
+}
+.notices p {
+  margin: 0;
+}
+.notices[data-state='notice'] {
+  border-left: 6px solid var(--alert-red);
+}
+.nt-item + .nt-item {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+}
+.nt-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.nt-badge {
+  padding: 0 var(--space-2);
+  border-radius: 4px;
+  background: var(--alert-red);
+  color: var(--bg);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.nt-title {
+  font-size: var(--fs-md);
+}
+.nt-meta,
+.nt-foot {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.nt-link,
+.credits a {
+  color: var(--accent);
+  text-underline-offset: 2px;
+}
+.nt-link {
+  font-weight: 600;
+}
+
+/* Modal de segurança */
+.safety {
+  width: min(520px, calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100dvh - 2 * var(--space-4));
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+.safety {
+  overscroll-behavior: contain;
+}
+.safety::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+.safety h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-lg);
+}
+.safety p {
+  margin: 0 0 var(--space-3);
+}
+.safety form {
+  display: flex;
+  justify-content: flex-end;
+}
+.primary-btn {
+  min-height: var(--target);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+  cursor: pointer;
+}
+.link-btn {
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
 }
 
 .brand-title {
@@ -362,7 +523,9 @@ button {
 
 .actions {
   display: flex;
+  flex-wrap: nowrap;
   justify-content: center;
+  gap: var(--space-2);
 }
 
 .segmented {
@@ -374,9 +537,11 @@ button {
 .seg-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
+  min-width: var(--target);
   min-height: var(--target);
-  padding: 0 var(--space-4);
+  padding: 0 var(--space-3);
   border: 0;
   background: var(--bg);
   cursor: pointer;
@@ -393,6 +558,283 @@ button {
   display: block;
   width: 20px;
   height: 20px;
+}
+
+/* Dica de toque sobre o mapa; some depois do primeiro ponto consultado. */
+.tap-hint {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-3);
+  z-index: 800;
+  max-width: calc(100% - 2 * var(--space-4));
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.tap-hint[hidden] {
+  display: none;
+}
+
+/* Marcador do ponto consultado */
+.mc-point-marker {
+  stroke: var(--text);
+  fill: var(--accent);
+  fill-opacity: 0.35;
+}
+
+/* Painel do ponto: folha inferior no celular, lateral em tela larga */
+.point-panel {
+  position: absolute;
+  z-index: 900;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 85%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: 1px solid var(--line);
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--surface);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.2);
+}
+.point-panel[hidden] {
+  display: none;
+}
+.point-panel p {
+  margin: 0;
+}
+.pp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.pp-title {
+  margin: 0;
+  font-size: var(--fs-lg);
+}
+.pp-title:focus {
+  outline: none;
+}
+.pp-coord,
+.pp-resolution,
+.pp-source {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.pp-resolution {
+  margin-top: var(--space-1) !important;
+}
+.pp-status {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-size: var(--fs-sm);
+}
+.pp-status[data-kind='warn'] {
+  border-left-color: var(--alert-orange);
+}
+.pp-status[hidden] {
+  display: none;
+}
+.pp-now {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-3) 0;
+}
+.pp-now:empty {
+  display: none;
+}
+.pp-rose {
+  position: relative;
+  flex: none;
+  width: 88px;
+  height: 88px;
+  color: var(--muted);
+}
+.pp-rose .rose {
+  opacity: 0.55;
+}
+.pp-arrow {
+  position: absolute;
+  inset: 0;
+  fill: var(--text);
+}
+.pp-label {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.pp-big {
+  line-height: 1.1;
+}
+.pp-big-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+.pp-big-unit {
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.pp-detail,
+.pp-waves {
+  font-size: var(--fs-sm);
+}
+.is-loading .pp-meteogram {
+  display: none;
+}
+
+/* Meteograma */
+.mg-readout {
+  min-height: 2.8em;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.mg-legend {
+  display: flex;
+  gap: var(--space-4);
+  margin: var(--space-2) 0;
+  font-size: var(--fs-xs);
+}
+.mg-key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.mg-key-line {
+  display: inline-block;
+  width: 20px;
+  border-top: 2px solid var(--series-wind);
+}
+.mg-key-line.mg-gust {
+  border-top: 2px dashed var(--series-gust);
+}
+.mg-charts {
+  touch-action: pan-y;
+  border-radius: var(--radius);
+}
+.mg-figure {
+  margin: 0 0 var(--space-2);
+}
+.mg-title {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.mg-svg {
+  display: block;
+  overflow: visible;
+}
+.mg-grid {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+.mg-day {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.mg-axis,
+.mg-direct {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.mg-direct {
+  fill: var(--text);
+}
+.mg-arrow {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mg-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.mg-line.mg-wind {
+  stroke: var(--series-wind);
+}
+.mg-line.mg-gust {
+  stroke: var(--series-gust);
+  stroke-dasharray: 5 3;
+}
+.mg-line.mg-wave {
+  stroke: var(--series-wave);
+}
+.mg-cursor {
+  stroke: var(--text);
+  stroke-width: 1;
+  opacity: 0.6;
+}
+.mg-dot {
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.mg-dot.mg-wind {
+  fill: var(--series-wind);
+}
+.mg-dot.mg-gust {
+  fill: var(--series-gust);
+}
+.mg-dot.mg-wave {
+  fill: var(--series-wave);
+}
+.mg-empty {
+  padding: var(--space-3) 0;
+  font-size: var(--fs-sm);
+}
+.mg-table summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--target);
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+.mg-table-body {
+  overflow-x: auto;
+}
+.mg-table table {
+  border-collapse: collapse;
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.mg-table th,
+.mg-table td {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+.mg-table th[scope='row'],
+.mg-table thead th:first-child {
+  text-align: left;
+}
+
+@media (min-width: 900px) {
+  .point-panel {
+    left: auto;
+    top: 0;
+    width: 440px;
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    border-radius: 0;
+  }
+  .map-wrap:has(.point-panel:not([hidden])) .recenter {
+    right: calc(440px + var(--space-3));
+  }
 }
 
 /* Rodapé fixo com o aviso obrigatório e os créditos */
@@ -416,8 +858,24 @@ button {
   gap: 0 var(--space-3);
   color: var(--muted);
 }
-.credits a {
-  color: var(--accent);
+
+
+/* Celular: hora menor e botões mais estreitos para sobrar mapa */
+@media (max-width: 480px) {
+  .tb-label {
+    font-size: var(--fs-md);
+  }
+  .seg-btn {
+    padding: 0 var(--space-2);
+    gap: var(--space-1);
+  }
+  .dock {
+    gap: var(--space-1);
+  }
+  /* Tela do ponto: a folha ganha a altura do painel do mapa (ela tem o próprio aviso de resolução). */
+  .app:has(.point-panel:not([hidden])) .dock {
+    display: none;
+  }
 }
 
 /* Telas largas: tempo e camadas na mesma linha */

@@ -140,6 +140,13 @@ docs/                especificação, plano, pendências, modelos
 - Grade: baía (`-44,-24,-42,-22`, 0,25°) com zoom a partir de `BAY_GRID_MIN_ZOOM` (variável de **build**, padrão 9) e centro dentro do bbox da baía; senão a ampla (AC-MVP-27).
 - Barra de tempo: quadros de 3 h no fuso do aparelho, play e pré-carga de 3 quadros à frente.
 - Vista inicial: Enseada de São Francisco (-22,915, -43,105), zoom 10 (T-05).
+- Painel do ponto: toque no mapa (ou Enter com o mapa em foco) mostra a previsão da coordenada arredondada a 0,25°, com resumo da hora atual, meteograma (vento e rajada num gráfico, ondas em outro) e tabela. Estados tratados: dados parciais, previsão antiga (`stale`), limite de pontos novos (429/503 com o tempo de espera) e ponto sem onda.
+- Unidade do vento (nós, km/h, m/s) lembrada no aparelho (`localStorage`, só preferências).
+- Faixa de avisos oficiais no topo (registro manual, B3.3), modal de segurança na primeira abertura (reabre em "Segurança e limites"), idioma PT/EN e modo noturno manual, todos lembrados no aparelho.
+- PWA: manifest, ícones próprios e Service Worker (só no build de produção) com o shell e o último dado em cache. Ao mudar `apps/web/public/sw.js`, suba `VERSION` nele.
+- No `npm run dev`, a API simulada traz um aviso de exemplo marcado `[DEV]`; `MC_DEV_NOTICES=off` mostra o estado sem aviso.
+
+Para regenerar os ícones: `node scripts/icons.ts` (grava em `apps/web/public/icons/`).
 - Textos em `apps/web/src/i18n/{pt-BR,en}.json`; o teste confere as mesmas chaves nos dois idiomas.
 
 Para regenerar a costa (arquivos de entrada fora do repositório):

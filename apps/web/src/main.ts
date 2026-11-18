@@ -1,27 +1,37 @@
-// Mapa de vento e ondas (etapa 6a). Painel do ponto (6b) e avisos, modal,
-// idiomas, modo noturno e PWA (6c) entram nas próximas entregas.
+// App: mapa de vento e ondas (6a), painel do ponto (6b), avisos oficiais,
+// modal de segurança, idiomas, modo noturno e PWA (6c).
 import 'leaflet/dist/leaflet.css'
 import './style.css'
 import { formatLocal } from '@mariners-compass/core'
-import { ApiError, type LayerId, type RegionInfo } from './api.ts'
+import { ApiError, getNotices, type LayerId, type RegionInfo } from './api.ts'
 import { Forecast } from './forecast.ts'
 import { chooseRegion } from './grid-choice.ts'
-import { applyI18n, detectLocale, getLocale, setLocale, t, type MessageKey } from './i18n.ts'
+import { applyI18n, detectLocale, getLocale, LOCALES, setLocale, t, type Locale, type MessageKey } from './i18n.ts'
 import { compassRoseSvg, ICONS } from './icons.ts'
 import { renderLegend } from './legend.ts'
+import { renderNotices, type NoticesResponse } from './notices.ts'
+import { createSafetyDialog, safetyAcknowledged } from './safety.ts'
+import L from './leaflet-global.ts'
 import { addLand, createMap, INITIAL_CENTER, INITIAL_ZOOM, PANES } from './map.ts'
+import { isSpeedUnit } from './point-format.ts'
+import { PointPanel } from './point-panel.ts'
+import { readPref, writePref } from './prefs.ts'
 import type { SpeedUnit } from './scales.ts'
-import { currentMode, onModeChange } from './theme.ts'
+import { cssVar, currentMode, onModeChange, setNightMode } from './theme.ts'
 import { nearestFrame, TimeBar } from './timebar.ts'
 import { WavesLayer } from './waves-layer.ts'
 import { createWindLayer } from './wind-layer.ts'
 
 /** Intervalo entre quadros no play (ms). */
 const PLAY_INTERVAL_MS = 1500
+/** Recarga dos avisos oficiais (ms). */
+const NOTICES_REFRESH_MS = 15 * 60_000
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!
 
-setLocale(detectLocale(navigator.languages ?? [navigator.language]))
+const storedLocale = readPref('lang')
+setLocale(LOCALES.includes(storedLocale as Locale) ? (storedLocale as Locale) : detectLocale(navigator.languages ?? [navigator.language]))
+if (readPref('mode') === 'night') setNightMode(true)
 document.documentElement.lang = getLocale()
 document.title = t('app.title')
 applyI18n(document)
@@ -33,7 +43,7 @@ document.querySelectorAll<HTMLElement>('[data-icon]').forEach((el) => {
 
 const state = {
   layer: 'wind' as LayerId,
-  unit: 'kn' as SpeedUnit,
+  unit: (isSpeedUnit(readPref('unit')) ? readPref('unit') : 'kn') as SpeedUnit,
   index: 0,
   region: null as RegionInfo | null,
   playing: false,
@@ -63,6 +73,13 @@ function showStatus(key: MessageKey | null, params: Record<string, string> = {},
   $('#status-retry').hidden = !retry
 }
 
+/** Status do quadro: sem rede (dado salvo no aparelho), rodada antiga ou nada. */
+function frameStatus(frames: NonNullable<Forecast['frames']>): void {
+  if (!navigator.onLine) showStatus('status.offline', { run: runLabel(frames.meta.run_time) })
+  else if (frames.meta.status === 'stale') showStatus('status.stale', { run: runLabel(frames.meta.run_time) })
+  else showStatus(null)
+}
+
 function errorKey(err: unknown): MessageKey {
   if (!(err instanceof ApiError)) return 'error.generic'
   if (err.status === 0) return 'error.network'
@@ -83,8 +100,11 @@ function renderMeta(): void {
   $('#attribution').textContent = meta?.attribution.join(' ') ?? ''
   $('#resolution').textContent = state.region ? t(state.region.id === 'bay' ? 'resolution.bay' : 'resolution.wide') : ''
   renderLegend($('#legend'), state.layer, currentMode(), state.unit)
-  document.querySelectorAll<HTMLButtonElement>('.seg-btn').forEach((b) => {
+  document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-layer]').forEach((b) => {
     b.setAttribute('aria-pressed', String(b.dataset.layer === state.layer))
+  })
+  document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-unit]').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.unit === state.unit))
   })
 }
 
@@ -114,8 +134,7 @@ async function showFrame(index: number, retried = false): Promise<void> {
     if (seq !== state.seq) return
     if (state.layer === 'wind') wind.setData(file)
     else waves.setData(file)
-    if (frames.meta.status === 'stale') showStatus('status.stale', { run: runLabel(frames.meta.run_time) })
-    else showStatus(null)
+    frameStatus(frames)
     forecast.preload(state.layer, region, index)
   } catch (err) {
     if (seq !== state.seq) return
@@ -164,7 +183,7 @@ function stopPlay(): void {
   timebar.setPlaying(false)
 }
 
-document.querySelectorAll<HTMLButtonElement>('.seg-btn').forEach((btn) => {
+document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-layer]').forEach((btn) => {
   btn.addEventListener('click', () => {
     const layer = btn.dataset.layer as LayerId
     if (layer === state.layer) return
@@ -172,6 +191,44 @@ document.querySelectorAll<HTMLButtonElement>('.seg-btn').forEach((btn) => {
     setActiveLayer()
     void loadFrames(true)
   })
+})
+
+document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-unit]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const unit = btn.dataset.unit
+    if (!isSpeedUnit(unit) || unit === state.unit) return
+    state.unit = unit
+    writePref('unit', unit)
+    renderMeta()
+    panel.setUnit(unit)
+  })
+})
+
+// Painel do ponto: toque no mapa pede o /point; o marcador fica na coordenada
+// arredondada que a previsão usa (o toque original é só o pedido).
+let marker: L.CircleMarker | null = null
+const panel = new PointPanel($('#point-panel'), closePanel)
+
+function closePanel(): void {
+  panel.close()
+  marker?.remove()
+  marker = null
+  $('#map').focus()
+}
+
+map.on('click', (e: L.LeafletMouseEvent) => {
+  $('#tap-hint').hidden = true
+  marker?.remove()
+  marker = L.circleMarker(e.latlng, { pane: PANES.marker, radius: 8, weight: 3, className: 'mc-point-marker', interactive: false }).addTo(map)
+  void panel.open(e.latlng.lat, e.latlng.lng, state.unit).then((point) => {
+    if (point && marker) marker.setLatLng([point.lat, point.lon])
+  })
+})
+
+// Teclado: Enter no mapa pede a previsão do centro.
+$('#map').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || e.target !== $('#map')) return
+  map.fire('click', { latlng: map.getCenter() })
 })
 
 $('#status-retry').addEventListener('click', () => void loadFrames(true))
@@ -189,8 +246,75 @@ onModeChange((mode) => {
   waves.setMode(mode)
   land?.restyle()
   renderMeta()
+  syncChrome()
 })
 
+// Avisos oficiais (B3.3): carregam na abertura e a cada 15 min.
+let notices: NoticesResponse | null = null
+let noticesFailed = false
+async function loadNotices(): Promise<void> {
+  try {
+    notices = await getNotices()
+    noticesFailed = false
+  } catch {
+    noticesFailed = notices === null
+  }
+  renderNotices($('#notices'), notices, noticesFailed)
+}
+window.setInterval(() => void loadNotices(), NOTICES_REFRESH_MS)
+
+// Modal de segurança: na primeira abertura e pelo link do rodapé.
+const safety = createSafetyDialog()
+$('#safety-open').addEventListener('click', () => safety.open())
+
+/** Estado dos botões de idioma e de modo noturno e a cor da barra do navegador. */
+function syncChrome(): void {
+  document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-lang]').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.lang === getLocale()))
+  })
+  $('#night-toggle').setAttribute('aria-pressed', String(currentMode() === 'night'))
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((meta) => {
+    meta.content = cssVar('--surface') || meta.content
+  })
+}
+
+document.querySelectorAll<HTMLButtonElement>('.seg-btn[data-lang]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const locale = btn.dataset.lang as Locale
+    if (locale === getLocale()) return
+    setLocale(locale)
+    writePref('lang', locale)
+    document.documentElement.lang = locale
+    document.title = t('app.title')
+    applyI18n(document)
+    timebar.refreshText()
+    panel.refreshText()
+    safety.refreshText()
+    renderMeta()
+    renderNotices($('#notices'), notices, noticesFailed)
+    syncChrome()
+  })
+})
+
+$('#night-toggle').addEventListener('click', () => {
+  const on = currentMode() !== 'night'
+  writePref('mode', on ? 'night' : 'system')
+  setNightMode(on)
+})
+
+window.addEventListener('online', () => forecast.frames && frameStatus(forecast.frames))
+window.addEventListener('offline', () => forecast.frames && frameStatus(forecast.frames))
+
+// PWA: Service Worker só no build de produção (no dev, o cache atrapalharia).
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => undefined)
+  })
+}
+
+syncChrome()
+if (!safetyAcknowledged()) safety.open()
+void loadNotices()
 setActiveLayer()
 addLand(map)
   .then((l) => (land = l))
