@@ -18,7 +18,13 @@ interface VelocityLayer extends L.Layer {
 
 type VelocityFactory = (options: Record<string, unknown>) => VelocityLayer
 
+/** Movimento reduzido no sistema: partículas mais lentas e menos quadros por segundo. */
+function reducedMotion(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
 export function createWindLayer(mode: Mode, pane: string): WindLayer {
+  const calm = reducedMotion()
   const factory = (L as unknown as { velocityLayer: VelocityFactory }).velocityLayer
   // O plugin guarda a referência deste array e não aceita trocar a escala por
   // setOptions; a troca de modo altera o conteúdo no lugar.
@@ -31,11 +37,11 @@ export function createWindLayer(mode: Mode, pane: string): WindLayer {
     minVelocity: 0,
     maxVelocity: WIND_SCALE_MAX_MS,
     colorScale,
-    velocityScale: 0.006,
+    velocityScale: calm ? 0.002 : 0.006,
     particleAge: 60,
     lineWidth: 1.6,
     particleMultiplier: 1 / 250,
-    frameRate: 20,
+    frameRate: calm ? 8 : 20,
   })
   return {
     layer,

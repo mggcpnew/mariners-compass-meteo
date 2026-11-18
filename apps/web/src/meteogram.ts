@@ -283,6 +283,7 @@ export class Meteogram {
   private onPointer(e: PointerEvent): void {
     const d = this.data
     if (!d) return
+    this.readout.setAttribute('aria-live', 'off')
     const rect = this.charts.getBoundingClientRect()
     const plot = this.width - M.left - M.right
     const f = (e.clientX - rect.left - M.left) / plot
@@ -298,6 +299,8 @@ export class Meteogram {
       e.key === 'ArrowRight' ? this.cursor + step : e.key === 'ArrowLeft' ? this.cursor - step : e.key === 'Home' ? 0 : e.key === 'End' ? last : null
     if (next === null) return
     e.preventDefault()
+    // Pelo teclado, a leitura é anunciada; pelo mouse, não (seria ruído).
+    this.readout.setAttribute('aria-live', 'polite')
     this.moveCursor(Math.min(last, Math.max(0, next)))
   }
 }

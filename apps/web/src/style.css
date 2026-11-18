@@ -102,6 +102,31 @@ body {
 button {
   font: inherit;
   color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+button:not(:disabled):active {
+  filter: brightness(0.92);
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-2);
+  top: -100px;
+  z-index: 1000;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 700;
+}
+.skip-link:focus {
+  top: var(--space-2);
+}
+.dock:focus {
+  outline: none;
 }
 
 :focus-visible {
@@ -111,7 +136,7 @@ button {
 
 .app {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   height: 100dvh;
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
@@ -136,7 +161,129 @@ button {
 }
 
 .brand-text {
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+.top-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+.segmented-sm .seg-btn {
+  min-width: var(--target);
+  padding: 0 var(--space-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.top-actions .icon-btn[aria-pressed='true'] {
+  background: var(--text);
+  color: var(--bg);
+}
+.top-actions .icon-btn svg {
+  fill: currentColor;
+}
+
+/* Faixa de avisos oficiais (B3.3): sempre visível, com o aviso fixo do B10 */
+.notices {
+  display: grid;
+  gap: var(--space-1);
+  max-height: 30vh;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  font-size: var(--fs-sm);
+}
+.notices p {
+  margin: 0;
+}
+.notices[data-state='notice'] {
+  border-left: 6px solid var(--alert-red);
+}
+.nt-item + .nt-item {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+}
+.nt-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.nt-badge {
+  padding: 0 var(--space-2);
+  border-radius: 4px;
+  background: var(--alert-red);
+  color: var(--bg);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.nt-title {
+  font-size: var(--fs-md);
+}
+.nt-meta,
+.nt-foot {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.nt-link,
+.credits a {
+  color: var(--accent);
+  text-underline-offset: 2px;
+}
+.nt-link {
+  font-weight: 600;
+}
+
+/* Modal de segurança */
+.safety {
+  width: min(520px, calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100dvh - 2 * var(--space-4));
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+.safety {
+  overscroll-behavior: contain;
+}
+.safety::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+.safety h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-lg);
+}
+.safety p {
+  margin: 0 0 var(--space-3);
+}
+.safety form {
+  display: flex;
+  justify-content: flex-end;
+}
+.primary-btn {
+  min-height: var(--target);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+  cursor: pointer;
+}
+.link-btn {
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
 }
 
 .brand-title {
@@ -711,9 +858,7 @@ button {
   gap: 0 var(--space-3);
   color: var(--muted);
 }
-.credits a {
-  color: var(--accent);
-}
+
 
 /* Celular: hora menor e botões mais estreitos para sobrar mapa */
 @media (max-width: 480px) {

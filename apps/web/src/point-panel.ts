@@ -115,6 +115,15 @@ export class PointPanel {
     this.root.hidden = true
   }
 
+  /** Reaplica os textos depois da troca de idioma. */
+  refreshText(): void {
+    if (this.root.hidden) return
+    this.title.textContent = t('point.title')
+    this.closeBtn.setAttribute('aria-label', t('point.close'))
+    this.resolution.textContent = t('resolution.point')
+    if (this.res) this.render()
+  }
+
   setUnit(unit: SpeedUnit): void {
     this.unit = unit
     if (this.res) this.render()

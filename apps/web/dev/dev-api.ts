@@ -77,7 +77,23 @@ export function createDevApi(landPath: string) {
   }
 
   const cache = new Map<string, PointCacheRow>()
-  const notices: NoticeRow[] = []
+  // Aviso de exemplo para ver a faixa no dev. MC_DEV_NOTICES=off mostra o estado vazio.
+  const withNotice = process.env.MC_DEV_NOTICES?.trim() !== 'off'
+  const registeredAt = formatUtc(Date.now() - 2 * 3_600_000)
+  const notices: NoticeRow[] = withNotice
+    ? [
+        {
+          id: 'dev-1',
+          title: '[DEV] Aviso simulado de mau tempo',
+          body: 'Texto de exemplo do ambiente de desenvolvimento. Ventos de 25 a 35 nós e ondas de 2,5 a 3,5 m.',
+          issued_at: registeredAt,
+          valid_until: formatUtc(Date.now() + 24 * 3_600_000),
+          source_url: 'https://www.marinha.mil.br/chm',
+          registered_at: registeredAt,
+        },
+      ]
+    : []
+  const lastChecked = withNotice ? formatUtc(Date.now() - 3_600_000) : null
   const store: ApiStore = {
     latestClosedRun: async () => run,
     closedRunByTime: async (t) => (t === runTime ? run : null),
@@ -92,8 +108,8 @@ export function createDevApi(landPath: string) {
     putPointCache: async (row) => void cache.set(row.key, row),
     reservePoint: async () => ({ allowed: true, reason: null }),
     validNotices: async () => notices,
-    lastRegisteredAt: async () => null,
-    lastCheckedAt: async () => null,
+    lastRegisteredAt: async () => (withNotice ? registeredAt : null),
+    lastCheckedAt: async () => lastChecked,
   }
 
   return createHandler(() => ({

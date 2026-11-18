@@ -147,3 +147,7 @@ export function getGrid(
 ): Promise<GridRecord[]> {
   return getJson(gridUrl(layer, runTime, time, region), fetchFn)
 }
+
+export function getNotices(fetchFn: FetchLike = defaultFetch): Promise<import('./notices.ts').NoticesResponse> {
+  return getJson('/api/v1/notices', fetchFn)
+}

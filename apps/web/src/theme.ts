@@ -23,3 +23,10 @@ export function onModeChange(cb: (mode: Mode) => void): void {
 export function cssVar(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 }
+
+/** Liga ou desliga o modo noturno (só vermelho e preto) e avisa as camadas. */
+export function setNightMode(on: boolean): void {
+  if (on) document.documentElement.dataset.mode = 'night'
+  else delete document.documentElement.dataset.mode
+  document.dispatchEvent(new Event(MODE_CHANGE_EVENT))
+}
