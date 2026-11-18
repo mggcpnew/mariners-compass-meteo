@@ -33,7 +33,15 @@ export interface AppConfig {
     maxPerMin: number
     maxPerHour: number
     roundDeg: number
+    /** Limite por cliente (hash do IP) ligado. */
+    clientLimit: boolean
+    clientMaxPerHour: number
+    clientMaxPerDay: number
+    /** max-age das respostas de sucesso do /point. */
+    cacheControlS: number
   }
+  framesCacheS: number
+  noticesCacheS: number
   grid: {
     staleHours: number
     expiredHours: number
@@ -58,6 +66,14 @@ function num(env: Env, name: string, fallback: number, opts: { int?: boolean; mi
     throw new ConfigError(`${name}: invalid value "${raw}"`)
   }
   return n
+}
+
+function onOff(env: Env, name: string, fallback: boolean): boolean {
+  const raw = text(env, name)
+  if (raw === null) return fallback
+  if (raw === 'on') return true
+  if (raw === 'off') return false
+  throw new ConfigError(`${name}: expected "on" or "off" (got "${raw}")`)
 }
 
 function url(env: Env, name: string): string | null {
@@ -122,7 +138,13 @@ export function loadConfig(env: Env): AppConfig {
       maxPerMin: num(env, 'POINT_MAX_PER_MIN', 100, { min: 2 }),
       maxPerHour: num(env, 'POINT_MAX_PER_HOUR', 1000, { min: 2 }),
       roundDeg: num(env, 'POINT_ROUND_DEG', 0.25, { int: false, min: 0.01, max: 5 }),
+      clientLimit: onOff(env, 'POINT_CLIENT_LIMIT', true),
+      clientMaxPerHour: num(env, 'POINT_CLIENT_MAX_PER_HOUR', 40, { min: 2 }),
+      clientMaxPerDay: num(env, 'POINT_CLIENT_MAX_PER_DAY', 200, { min: 2 }),
+      cacheControlS: num(env, 'POINT_CACHE_CONTROL_S', 60),
     },
+    framesCacheS: num(env, 'FRAMES_CACHE_S', 60),
+    noticesCacheS: num(env, 'NOTICES_CACHE_S', 60),
     grid: {
       staleHours: num(env, 'GRID_STALE_HOURS', 18, { min: 1 }),
       expiredHours: num(env, 'GRID_EXPIRED_HOURS', 48, { min: 1 }),

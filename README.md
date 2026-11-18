@@ -6,7 +6,7 @@ Gratuito, sem anúncios e sem assinatura. Sem vínculo oficial com o Iate Clube 
 
 > **Aviso:** este app não substitui os boletins e avisos oficiais da Marinha do Brasil. Ele mostra previsões de modelos numéricos, não medições. Consulte sempre o boletim oficial antes de sair.
 
-**Estado:** etapa 4 de 7 (job de ingestão e workflows). Ainda não há funcionalidade para o usuário. Plano: [docs/PLANO-EXECUCAO.md](docs/PLANO-EXECUCAO.md). Especificação: [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
+**Estado:** etapa 5 de 7 (API v1 e registro de avisos). Ainda não há funcionalidade para o usuário. Plano: [docs/PLANO-EXECUCAO.md](docs/PLANO-EXECUCAO.md). Especificação: [docs/ESPECIFICACAO.md](docs/ESPECIFICACAO.md).
 
 ## Pré-requisitos (Windows 11)
 
@@ -37,7 +37,7 @@ npm run dev                    # front em modo de desenvolvimento
 | `npm test` | Testes unitários (Vitest); nenhum usa rede |
 | `npm run typecheck` | Verificação de tipos (`packages/core`, `ingest`, `scripts`) |
 | `npm run ingest` | Uma rodada do job de ingestão (variáveis do ambiente) |
-| `npm run notice:add` / `notice:checked` | Registro de avisos da Marinha (implementados na etapa 5) |
+| `npm run notice:add` / `notice:checked` | Registro manual de avisos da Marinha e da conferência do boletim |
 
 Antes de cada push: `npm run lint`, `npm run typecheck`, `npm test` e `npm run build` passando.
 
@@ -59,6 +59,31 @@ npx supabase start
 $env:SOURCE_MODE='simulated'; $env:SUPABASE_URL='http://127.0.0.1:54321'
 $env:SUPABASE_SERVICE_ROLE_KEY='<SERVICE_ROLE_KEY de "npx supabase status">'
 npm run ingest
+```
+
+## API v1 (Vercel Functions)
+
+Uma única Function (`api/index.ts`) atende `/api/v1/*` por rewrite (`vercel.json`), como a Vercel recomenda; o código fica em `packages/api`. Erros: `{ "error": { "code", "message" } }` com `Cache-Control: no-store`.
+
+| Endpoint | Resposta | Cache |
+|---|---|---|
+| `GET /api/v1/frames?layer=wind\|waves` | `meta` (`run_time`, `updated_at`, `status` ok/stale, unidades, crédito) e os 57 `times[]`. Mais de 18 h: `stale`; mais de 48 h ou sem rodada: 503 `data_expired` | `public, max-age=60` |
+| `GET /api/v1/grid?layer=&run_time=&time=&bbox=&res=` | O arquivo da grade, sem processamento. `bbox`/`res` só nos pares `-54,-35,-30,5`+`2` ou `-44,-24,-42,-22`+`0.25` (ausentes = ampla). Sem `run_time`: 422; rodada inexistente: 404 `run_not_found`; mais de 48 h: 503 | `public, max-age=31536000, immutable`; `X-Source`, `X-Run-Time`, `X-Attribution` (codificado com `encodeURIComponent`) |
+| `GET /api/v1/point?lat=&lon=&vars=&hours=` | Série horária no ponto arredondado a 0,25°, a partir da hora UTC atual; vento em nós. `vars` vazio = todas; `hours` ausente = 168. `status` ok/partial/stale | `public, max-age=60` |
+| `GET /api/v1/notices` | Avisos válidos, crédito, link do boletim, `last_registered_at`, `last_checked_at` | `public, max-age=60` |
+| `GET /api/v1/route` | 501 `not_implemented` (fase 2) | `no-store` |
+
+**`/point`:** cache em `point_cache` (3 h; parcial 15 min; vencido servido como `stale` até 6 h só se a fonte não puder ser consultada). No miss, reserva 2 chamadas antes de chamar a fonte: teto diário operacional (3.200), 100 por minuto e 1.000 por hora globais, e **limite por cliente** de 40 por hora e 200 por dia (20 e 100 pontos novos). O cliente é identificado pelo HMAC do IP (`CLIENT_HASH_SECRET`); o IP bruto nunca é gravado e os contadores somem em 2 dias. Negado: 503 `quota_exhausted` (dia) ou 429 `rate_limited`, com `Retry-After`. Supabase fora do ar: 503 sem chamar a fonte.
+
+Variáveis da Vercel: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` e `CLIENT_HASH_SECRET` (sensíveis), `SOURCE_MODE=live`, `OPENMETEO_FORECAST_URL`, `OPENMETEO_MARINE_URL`; as demais do B9 são opcionais.
+
+## Avisos da Marinha (registro manual)
+
+Sem scraping. Leia o boletim oficial (https://www.marinha.mil.br/chm) e, com o `.env.local` preenchido:
+
+```powershell
+npm run notice:add -- --title "Aviso de mau tempo" --body "Texto do aviso" --url "https://www.marinha.mil.br/chm" --valid-until "2026-11-20T00:00Z"
+npm run notice:checked   # sempre, com ou sem aviso novo
 ```
 
 ## Workflows do GitHub Actions
@@ -98,6 +123,7 @@ apps/web/            front-end (Vite + TypeScript, sem framework de UI)
 api/v1/              Vercel Functions (/api/v1/*)
 ingest/              job de ingestão (GitHub Actions; Node 24 roda o TypeScript direto)
 packages/core/       código comum: adaptadores de fonte, conversões, tempo, quadros, vencimento
+packages/api/        rotas da API v1 (usadas pela Function api/index.ts)
 supabase/            config da CLI e migrações
 scripts/             avisos, importação local de maré, verificações de CI
 docs/                especificação, plano, pendências, modelos

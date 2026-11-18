@@ -5,7 +5,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(16);
+select plan(18);
 
 select is(
   (select count(*)::int from pg_tables where schemaname = 'public' and not rowsecurity),
@@ -15,8 +15,8 @@ select is(
 
 select is(
   (select count(*)::int from pg_tables where schemaname = 'public'),
-  10,
-  'public tem as 10 tabelas do esquema mínimo (B8)'
+  11,
+  'public tem as 11 tabelas (10 do B8 + client_quota)'
 );
 
 select is(
@@ -53,6 +53,16 @@ select ok(
 select ok(
   has_function_privilege('service_role', 'public.reserve_calls(timestamptz, text, integer, integer, integer, integer)', 'execute'),
   'service_role executa reserve_calls'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.reserve_point_calls(timestamptz, text, integer, integer, integer, integer, integer, integer)', 'execute'),
+  'anon não executa reserve_point_calls'
+);
+
+select ok(
+  has_function_privilege('service_role', 'public.reserve_point_calls(timestamptz, text, integer, integer, integer, integer, integer, integer)', 'execute'),
+  'service_role executa reserve_point_calls'
 );
 
 select is(

@@ -6,20 +6,23 @@
   "workspaces": [
     "apps/web",
     "ingest",
-    "packages/core"
+    "packages/core",
+    "packages/api"
   ],
   "engines": {
-    "node": "24.13.0"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "npm run dev -w apps/web",
     "build": "npm run build -w apps/web",
+    "postinstall": "npm run build:packages",
+    "build:packages": "tsc -p packages/core/tsconfig.build.json && tsc -p packages/api/tsconfig.build.json",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc -p packages/core && tsc -p ingest && tsc -p scripts",
+    "typecheck": "tsc -p packages/core && tsc -p packages/api && tsc -p ingest && tsc -p scripts",
     "ingest": "npm run ingest -w ingest",
-    "notice:add": "node -e \"console.error('notice:add: implementado na etapa 5'); process.exit(1)\"",
-    "notice:checked": "node -e \"console.error('notice:checked: implementado na etapa 5'); process.exit(1)\""
+    "notice:add": "node --env-file-if-exists=.env.local scripts/notices.ts add",
+    "notice:checked": "node --env-file-if-exists=.env.local scripts/notices.ts checked"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
