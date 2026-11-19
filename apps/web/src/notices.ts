@@ -2,7 +2,7 @@
 // manual (npm run notice:add); a faixa mostra o crédito, o link oficial, a data
 // do último registro e a da última conferência, e sempre o aviso fixo do B10.
 // Texto vindo do banco entra só por textContent (nunca como HTML).
-import { formatLocal } from '@mariners-compass/core'
+import { formatLocal, NAVY_BULLETIN_URL } from '@mariners-compass/core'
 import { getLocale, t } from './i18n.ts'
 
 export interface Notice {
@@ -27,10 +27,9 @@ export interface NoticesResponse {
   notices: Notice[]
 }
 
-const NAVY_FALLBACK_URL = 'https://www.marinha.mil.br/chm'
 
 /** Só links https viram âncora; qualquer outra coisa cai no boletim oficial. */
-export function safeHttpsUrl(value: string | null | undefined, fallback = NAVY_FALLBACK_URL): string {
+export function safeHttpsUrl(value: string | null | undefined, fallback = NAVY_BULLETIN_URL): string {
   try {
     const u = new URL(value ?? '')
     return u.protocol === 'https:' ? u.href : fallback

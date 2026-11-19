@@ -8,6 +8,9 @@ export class ConfigError extends Error {
 
 export type SourceMode = 'live' | 'simulated'
 
+/** Dias de série necessários para os 57 quadros em qualquer hora da rodada. */
+export const MIN_FORECAST_DAYS = 9
+
 /** bbox na ordem oeste, sul, leste, norte; res em graus. */
 export interface RegionSpec {
   bbox: readonly [west: number, south: number, east: number, north: number]
@@ -121,8 +124,10 @@ export function loadConfig(env: Env): AppConfig {
   }
   return {
     sourceMode: mode,
-    // 14 dias é o limite de peso 1 por chamada (pricing do Open-Meteo, T-14).
-    forecastDays: num(env, 'FORECAST_DAYS', 9, { min: 1, max: 14 }),
+    // Mínimo 9: a série começa às 00:00 UTC do dia e os 57 quadros podem ir até
+    // 00:00 do 9º dia (rodada às 21:01, AC-MVP-19). Máximo 14: limite de peso 1
+    // por chamada (pricing do Open-Meteo, T-14).
+    forecastDays: num(env, 'FORECAST_DAYS', MIN_FORECAST_DAYS, { min: MIN_FORECAST_DAYS, max: 14 }),
     openMeteo: {
       forecastUrl: url(env, 'OPENMETEO_FORECAST_URL'),
       marineUrl: url(env, 'OPENMETEO_MARINE_URL'),

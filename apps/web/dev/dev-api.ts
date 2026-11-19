@@ -1,7 +1,7 @@
 // API v1 de desenvolvimento: o mesmo handler da produção (packages/api) com um
 // store em memória que fabrica uma rodada simulada. Ondas ficam null sobre a
 // terra (polígonos do Natural Earth), como a fonte real faz (T-15).
-// Só roda no `vite dev`; nunca entra no build.
+// Roda no `vite dev` e, só com MC_E2E=1, no `vite preview` (E2E). Nunca entra no dist/.
 import { readFileSync } from 'node:fs'
 import { createHandler, type ApiStore, type NoticeRow, type PointCacheRow } from '@mariners-compass/api'
 import {

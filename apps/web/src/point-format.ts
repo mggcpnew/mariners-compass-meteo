@@ -1,15 +1,11 @@
 // Funções puras do painel do ponto: unidades, eixos, direção e mensagens.
-import { knotsToKmh, knotsToMs } from '@mariners-compass/core'
-import type { SpeedUnit } from './scales.ts'
+import { fromKnots, type SpeedUnit } from './scales.ts'
 
 export const SPEED_UNITS: readonly SpeedUnit[] = ['kn', 'kmh', 'ms']
 
 /** O /point devolve vento e rajada em nós (B7). */
 export function convertKnots(kn: number | null, unit: SpeedUnit): number | null {
-  if (kn === null) return null
-  if (unit === 'kmh') return knotsToKmh(kn)
-  if (unit === 'ms') return knotsToMs(kn)
-  return kn
+  return kn === null ? null : fromKnots(kn, unit)
 }
 
 export function isSpeedUnit(value: unknown): value is SpeedUnit {

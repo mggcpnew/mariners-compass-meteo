@@ -20,7 +20,7 @@ export function createSafetyDialog(): { open(): void; refreshText(): void } {
     `<p data-i18n="safety.official"></p>` +
     `<p data-i18n="safety.manual"></p>` +
     `<p data-i18n="safety.icb"></p>` +
-    `<form method="dialog"><button type="submit" class="primary-btn" data-i18n="safety.ok"></button></form>`
+    `<form method="dialog"><button type="submit" value="ok" class="primary-btn" data-i18n="safety.ok"></button></form>`
   document.body.append(dialog)
   const fill = () => {
     dialog.querySelectorAll<HTMLElement>('[data-i18n]').forEach((e) => {
@@ -28,7 +28,11 @@ export function createSafetyDialog(): { open(): void; refreshText(): void } {
     })
   }
   fill()
-  dialog.addEventListener('close', () => writePref('safety', SAFETY_VERSION))
+  // Só o botão "Entendi" (returnValue "ok") confirma a leitura; Esc fecha sem gravar.
+  dialog.addEventListener('close', () => {
+    if (dialog.returnValue === 'ok') writePref('safety', SAFETY_VERSION)
+    dialog.returnValue = ''
+  })
   return {
     open() {
       fill()

@@ -24,7 +24,8 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } } },
   ],
   webServer: {
-    command: 'npx vite build && npx vite preview --port 4173 --strictPort',
+    // Na CI o build vem do passo anterior (E2E_SKIP_BUILD=1), o mesmo que o Lighthouse audita.
+    command: process.env.E2E_SKIP_BUILD === '1' ? 'npx vite preview --port 4173 --strictPort' : 'npx vite build && npx vite preview --port 4173 --strictPort',
     cwd: '../apps/web',
     url: BASE_URL,
     env: { MC_E2E: '1' },

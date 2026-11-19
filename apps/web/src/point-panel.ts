@@ -143,7 +143,8 @@ export class PointPanel {
     const fixed = (v: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
     this.coord.textContent = t('point.coord', { lat: fixed(lat), lon: fixed(lon) })
     const when = formatLocal(res.meta.updated_at, locale, undefined, { dateStyle: 'short', timeStyle: 'short' })
-    if (res.meta.status === 'stale') this.setStatus(t('point.stale', { time: when }), 'warn')
+    if (!navigator.onLine) this.setStatus(t('point.offline', { time: when }), 'warn')
+    else if (res.meta.status === 'stale') this.setStatus(t('point.stale', { time: when }), 'warn')
     else if (res.meta.status === 'partial') this.setStatus(t('point.partial'), 'warn')
     else this.setStatus('', 'none')
     const model = res.meta.model === 'auto' ? t('source.modelAuto') : res.meta.model

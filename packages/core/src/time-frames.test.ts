@@ -1,7 +1,7 @@
 // Tempo (B12) e alinhamento dos quadros (AC-MVP-25).
 import { describe, expect, it } from 'vitest'
 import { FRAME_COUNT, frameTimes, selectFrames } from './frames.ts'
-import { floorToHourUtc, formatLocal, formatUtc, normalizeGmt, parseUtc } from './time.ts'
+import { floorToHourUtc, formatLocal, formatUtc, normalizeGmt, normalizeIsoZ, parseUtc } from './time.ts'
 
 describe('tempo', () => {
   it('normaliza o GMT do Open-Meteo para UTC com Z', () => {
@@ -18,6 +18,13 @@ describe('tempo', () => {
   })
   it('formatUtc gera o formato canônico', () => {
     expect(formatUtc(Date.UTC(2026, 10, 17, 3))).toBe('2026-11-17T03:00:00Z')
+  })
+  it('normalizeIsoZ: aceita UTC com Z (segundos opcionais) e recusa o resto', () => {
+    expect(normalizeIsoZ('2026-11-17T21:00Z')).toBe('2026-11-17T21:00:00Z')
+    expect(normalizeIsoZ('2026-11-17T21:00:05Z')).toBe('2026-11-17T21:00:05Z')
+    expect(normalizeIsoZ('2026-11-17T21:00:00-03:00')).toBeNull()
+    expect(normalizeIsoZ('2026-13-40T21:00Z')).toBeNull()
+    expect(normalizeIsoZ(null)).toBeNull()
   })
   it('hora atual em UTC arredondada para baixo', () => {
     expect(formatUtc(floorToHourUtc(Date.UTC(2026, 10, 17, 14, 59, 59)))).toBe('2026-11-17T14:00:00Z')

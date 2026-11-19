@@ -204,6 +204,34 @@ describe('runIngest', () => {
     expect(store.reservations).toBe(885)
   })
 
+  it('teto da rodada com 4 workers e reserva lenta: nunca passa de 885 chamadas', async () => {
+    // A reserva no banco leva tempo: sem tomar a vaga antes do await, vários
+    // workers passavam juntos pela checagem do teto.
+    class SlowStore extends MemoryStore {
+      override async reserve(): Promise<ReserveResult> {
+        await new Promise((r) => setImmediate(r))
+        return super.reserve()
+      }
+    }
+    const store = new SlowStore()
+    const src = sources()
+    // Cada ponto falha 2 vezes antes de dar certo (contagem por coordenada, não global).
+    const tries = new Map<string, number>()
+    const inner = src.forecast
+    src.forecast = {
+      fetchPoint: async (req) => {
+        const key = `${req.lat}:${req.lon}`
+        const n = (tries.get(key) ?? 0) + 1
+        tries.set(key, n)
+        if (n <= 2) throw new SourceUnavailableError('HTTP 503', 503)
+        return inner.fetchPoint(req)
+      },
+    }
+    const r = await runIngest(deps(store, src, { concurrency: 4 }).d)
+    expect(r).toMatchObject({ status: 'aborted', reason: 'round_budget' })
+    expect(store.reservations).toBeLessThanOrEqual(885)
+  })
+
   it('reserva negada por minuto: espera o próximo minuto e segue', async () => {
     const store = new MemoryStore()
     store.denyQueue = ['minute']

@@ -128,14 +128,16 @@ async function showFrame(index: number, retried = false): Promise<void> {
   timebar.setIndex(index)
   renderMeta()
   const region = state.region
+  // A camada é a do pedido: se o usuário trocar de camada no meio, a resposta é descartada.
+  const layer = state.layer
   if (!region) return
   try {
-    const file = await forecast.grid(state.layer, region, index)
-    if (seq !== state.seq) return
-    if (state.layer === 'wind') wind.setData(file)
+    const file = await forecast.grid(layer, region, index)
+    if (seq !== state.seq || layer !== state.layer) return
+    if (layer === 'wind') wind.setData(file)
     else waves.setData(file)
     frameStatus(frames)
-    forecast.preload(state.layer, region, index)
+    forecast.preload(layer, region, index)
   } catch (err) {
     if (seq !== state.seq) return
     // Rodada trocada ou apagada: recarrega /frames uma vez (B7).
@@ -170,9 +172,19 @@ function startPlay(): void {
   const tick = () => {
     const next = state.index + 1 < frames.times.length ? state.index + 1 : 0
     // Só avança quando o próximo quadro já chegou; senão espera o próximo tique.
-    if (state.region && forecast.isReady(state.layer, state.region, next)) void showFrame(next)
-    else if (state.region) forecast.preload(state.layer, state.region, state.index)
-    playTimer = window.setTimeout(tick, PLAY_INTERVAL_MS)
+    // O pedido em curso é reaproveitado (Forecast.grid); se falhar, o play para e
+    // o erro aparece com "Tentar de novo", em vez de congelar em silêncio.
+    const region = state.region
+    if (!region) return
+    if (forecast.isReady(state.layer, region, next)) void showFrame(next)
+    else {
+      forecast.grid(state.layer, region, next).catch((err: unknown) => {
+        if (!state.playing) return
+        stopPlay()
+        showStatus(errorKey(err), {}, true)
+      })
+    }
+    if (state.playing) playTimer = window.setTimeout(tick, PLAY_INTERVAL_MS)
   }
   playTimer = window.setTimeout(tick, PLAY_INTERVAL_MS)
 }

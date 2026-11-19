@@ -50,4 +50,4 @@ export function secondsUntilNext(nowMs: number, window: 'minute' | 'hour' | 'day
 
 export const ATTRIBUTION_OPEN_METEO = 'Dados: Open-Meteo.com (CC BY 4.0)'
 export const ATTRIBUTION_NAVY = 'Fonte: Marinha do Brasil, CHM/DHN'
-export const NAVY_BULLETIN_URL = 'https://www.marinha.mil.br/chm'
+export { NAVY_BULLETIN_URL } from '@mariners-compass/core'

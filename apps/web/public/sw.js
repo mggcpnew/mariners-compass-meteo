@@ -3,9 +3,11 @@
 // - páginas e /api/v1 (frames, notices, point): rede primeiro, cache como reserva
 //   (sem rede, o app mostra o último dado salvo e avisa);
 // - /api/v1/grid de rodada fechada: cache primeiro (arquivo imutável), com limite;
-// - arquivos do app (/assets, /data, /icons): cache primeiro.
-// Mudou este arquivo? Suba VERSION: os caches antigos são apagados na ativação.
-const VERSION = 'v1'
+// - /assets (nome com hash do build): cache primeiro; os de builds antigos saem na instalação;
+// - /data, /icons e o manifest (nome fixo): rede primeiro, cache como reserva,
+//   para que costa e ícones novos cheguem sem depender de subir VERSION.
+// Mudou a lógica deste arquivo? Suba VERSION: os caches antigos são apagados na ativação.
+const VERSION = 'v2'
 const SHELL = `mc-shell-${VERSION}`
 const DATA = `mc-data-${VERSION}`
 const GRID = `mc-grid-${VERSION}`
@@ -21,7 +23,13 @@ self.addEventListener('install', (event) => {
       // Arquivos com hash do build citados no index.html.
       const text = await html.text()
       const assets = [...text.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1])
-      await cache.addAll([...new Set(assets), '/data/land.geojson', '/manifest.webmanifest', '/icons/icon.svg'])
+      const current = new Set(assets)
+      await cache.addAll([...current, '/data/land.geojson', '/manifest.webmanifest', '/icons/icon.svg'])
+      // Remove JS/CSS de builds anteriores (a página antiga já os carregou).
+      for (const req of await cache.keys()) {
+        const path = new URL(req.url).pathname
+        if (path.startsWith('/assets/') && !current.has(path)) await cache.delete(req)
+      }
       await self.skipWaiting()
     })(),
   )
@@ -84,7 +92,9 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(cacheFirst(request, GRID, GRID_MAX_ENTRIES))
   } else if (url.pathname.startsWith('/api/v1/')) {
     event.respondWith(networkFirst(request, DATA, request, DATA_MAX_ENTRIES))
-  } else if (/^\/(assets|data|icons)\//.test(url.pathname) || url.pathname === '/manifest.webmanifest') {
+  } else if (url.pathname.startsWith('/assets/')) {
     event.respondWith(cacheFirst(request, SHELL))
+  } else if (/^\/(data|icons)\//.test(url.pathname) || url.pathname === '/manifest.webmanifest') {
+    event.respondWith(networkFirst(request, SHELL))
   }
 })

@@ -1,18 +1,9 @@
 // GET /api/v1/grid?layer=&run_time=&time=&bbox=&res= (B7). Só repassa o
 // arquivo do Storage; resposta imutável, sem X-Status nem X-Updated-At.
-import { frameTimes, parseUtc, regionGrids, type RegionGrid } from '@mariners-compass/core'
+import { frameTimes, normalizeIsoZ, parseUtc, regionGrids, type RegionGrid } from '@mariners-compass/core'
 import type { BaseContext } from './context.ts'
 import { parseLayer } from './frames.ts'
 import { ATTRIBUTION_OPEN_METEO, errorResponse } from './http.ts'
-
-const ISO_Z = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?Z$/
-
-/** Normaliza para o formato canônico (segundos e Z) ou null se inválido. */
-function isoParam(v: string | null): string | null {
-  if (!v || !ISO_Z.test(v)) return null
-  const ms = Date.parse(v)
-  return Number.isFinite(ms) ? new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z') : null
-}
 
 /** Par bbox/res pré-gerado; ausentes = grade ampla; misto ou outro = null. */
 export function pickRegion(grids: RegionGrid[], bbox: string | null, res: string | null): RegionGrid | null {
@@ -28,9 +19,9 @@ export async function handleGrid(url: URL, ctx: BaseContext): Promise<Response> 
   const q = url.searchParams
   const layer = parseLayer(q.get('layer'))
   if (!layer) return errorResponse('invalid_parameter', 'layer must be "wind" or "waves"')
-  const runTime = isoParam(q.get('run_time'))
+  const runTime = normalizeIsoZ(q.get('run_time'))
   if (!runTime) return errorResponse('invalid_parameter', 'run_time is required (ISO 8601 UTC with Z)')
-  const time = isoParam(q.get('time'))
+  const time = normalizeIsoZ(q.get('time'))
   if (!time) return errorResponse('invalid_parameter', 'time is required (ISO 8601 UTC with Z)')
   const region = pickRegion(regionGrids(ctx.cfg), q.get('bbox'), q.get('res'))
   if (!region) return errorResponse('invalid_parameter', 'bbox and res must be one of the pre-generated pairs')

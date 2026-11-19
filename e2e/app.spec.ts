@@ -97,6 +97,16 @@ test('AC-MVP-17: sem aviso, diz que nada foi registrado e aponta o boletim', asy
   await expect(strip).toContainText(PT.fixed)
 })
 
+test('modal de segurança: Esc fecha sem confirmar; volta na próxima abertura', async ({ page }) => {
+  await openApp(page, { safetyAck: false })
+  const dialog = page.locator('dialog.safety')
+  await expect(dialog).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+  await page.reload()
+  await expect(dialog).toBeVisible()
+})
+
 test('modal de segurança: primeira abertura, "Entendi" lembra, rodapé reabre', async ({ page }) => {
   await openApp(page, { safetyAck: false })
   const dialog = page.locator('dialog.safety')

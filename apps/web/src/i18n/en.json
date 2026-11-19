@@ -94,5 +94,6 @@
   "lang.enName": "English",
   "mode.night": "Night mode",
   "status.offline": "Offline: showing the last forecast saved on this device (run of {run}).",
-  "a11y.skip": "Skip to map controls"
+  "a11y.skip": "Skip to map controls",
+  "point.offline": "Offline: showing the forecast for this point saved on this device, obtained at {time}."
 }

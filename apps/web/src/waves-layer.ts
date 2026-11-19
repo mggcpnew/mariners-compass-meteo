@@ -29,13 +29,13 @@ export class WavesLayer extends L.Layer {
     this.canvas = L.DomUtil.create('canvas', 'mc-waves leaflet-zoom-hide') as HTMLCanvasElement
     this.canvas.setAttribute('aria-hidden', 'true')
     map.getPane(this.paneName)!.appendChild(this.canvas)
-    map.on('moveend zoomend resize', this.redraw, this)
+    map.on('moveend resize', this.redraw, this)
     this.redraw()
     return this
   }
 
   override onRemove(map: L.Map): this {
-    map.off('moveend zoomend resize', this.redraw, this)
+    map.off('moveend resize', this.redraw, this)
     this.canvas?.remove()
     this.canvas = null
     return this

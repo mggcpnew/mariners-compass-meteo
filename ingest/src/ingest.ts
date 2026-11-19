@@ -87,11 +87,18 @@ export async function runIngest(deps: IngestDeps): Promise<IngestResult> {
       if (attempts + 1 > cfg.ingest.roundBudget) {
         throw new IngestAbort('round_budget', `more than ${cfg.ingest.roundBudget} calls`)
       }
-      const r = await store.reserve(now(), 'openmeteo_ingest', 1, cfg.ingest.dailyBudget, null, cfg.ingest.maxPerMin)
-      if (r.allowed) {
-        attempts++
-        return
+      // Toma a vaga antes do await: com vários workers, a checagem acima e o
+      // incremento não podem ficar separados por uma espera (senão passam juntos).
+      attempts++
+      let r: Awaited<ReturnType<typeof store.reserve>>
+      try {
+        r = await store.reserve(now(), 'openmeteo_ingest', 1, cfg.ingest.dailyBudget, null, cfg.ingest.maxPerMin)
+      } catch (err) {
+        attempts--
+        throw err
       }
+      if (r.allowed) return
+      attempts--
       if (r.reason === 'minute') {
         const wait = 60_000 - (now() % 60_000) + 250
         log(`teto por minuto atingido; aguardando ${Math.round(wait / 1000)} s`)

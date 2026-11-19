@@ -2,6 +2,16 @@
 
 const GMT_LOCAL = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(:\d{2})?$/
 
+/** ISO 8601 UTC com "Z", segundos opcionais (entrada da API e dos scripts). */
+export const ISO_UTC_Z = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?Z$/
+
+/** Normaliza para o formato canônico (segundos e Z) ou null se inválido. */
+export function normalizeIsoZ(value: string | null | undefined): string | null {
+  if (!value || !ISO_UTC_Z.test(value)) return null
+  const ms = Date.parse(value)
+  return Number.isFinite(ms) ? formatUtc(ms) : null
+}
+
 /** Formata um instante (ms ou Date) no formato canônico UTC. */
 export function formatUtc(value: number | Date): string {
   const ms = typeof value === 'number' ? value : value.getTime()

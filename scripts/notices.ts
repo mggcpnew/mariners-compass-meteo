@@ -4,6 +4,7 @@
 //   npm run notice:checked
 import { parseArgs } from 'node:util'
 import { createClient } from '@supabase/supabase-js'
+import { normalizeIsoZ } from '@mariners-compass/core'
 import { isMain } from './ci/is-main.ts'
 
 export interface NoticeInput {
@@ -14,17 +15,14 @@ export interface NoticeInput {
   issued_at: string | null
 }
 
-const ISO_Z = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?Z$/
-
 function isoZ(name: string, value: string | undefined, required: boolean): string | null {
   if (value === undefined || value.trim() === '') {
     if (required) throw new Error(`--${name} is required (AAAA-MM-DDThh:mmZ, UTC)`)
     return null
   }
-  if (!ISO_Z.test(value) || !Number.isFinite(Date.parse(value))) {
-    throw new Error(`--${name} must be ISO 8601 UTC ending in Z (got "${value}")`)
-  }
-  return new Date(Date.parse(value)).toISOString().replace(/\.\d{3}Z$/, 'Z')
+  const iso = normalizeIsoZ(value)
+  if (!iso) throw new Error(`--${name} must be ISO 8601 UTC ending in Z (got "${value}")`)
+  return iso
 }
 
 /** Valida os argumentos do notice:add. Lança Error com mensagem clara. */

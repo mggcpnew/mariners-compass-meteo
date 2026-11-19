@@ -94,5 +94,6 @@
   "lang.enName": "Inglês",
   "mode.night": "Modo noturno",
   "status.offline": "Sem conexão: mostrando a última previsão salva no aparelho (rodada de {run}).",
-  "a11y.skip": "Pular para os controles do mapa"
+  "a11y.skip": "Pular para os controles do mapa",
+  "point.offline": "Sem conexão: mostrando a previsão deste ponto salva no aparelho, obtida em {time}."
 }

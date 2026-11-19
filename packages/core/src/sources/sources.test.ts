@@ -207,6 +207,8 @@ describe('configuração e seleção de fonte', () => {
   })
   it('valores inválidos dão erro claro', () => {
     expect(() => loadConfig({ SOURCE_MODE: 'live', FORECAST_DAYS: '15' })).toThrow(/FORECAST_DAYS/)
+    // Menos de 9 dias não cobre os 57 quadros: cada rodada abortaria depois de gastar a cota.
+    expect(() => loadConfig({ SOURCE_MODE: 'live', FORECAST_DAYS: '8' })).toThrow(/FORECAST_DAYS/)
     expect(() => loadConfig({ SOURCE_MODE: 'live', OPENMETEO_FORECAST_URL: 'http://x.test' })).toThrow(/https/)
   })
   it('live sem URLs falha ao criar as fontes, sem chamar nada', () => {

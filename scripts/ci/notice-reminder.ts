@@ -5,9 +5,10 @@
 import { execFileSync } from 'node:child_process'
 import { isMain } from './is-main.ts'
 import { createClient } from '@supabase/supabase-js'
+import { NAVY_BULLETIN_URL } from '@mariners-compass/core'
 
 export const ISSUE_TITLE = 'Conferir avisos da Marinha'
-export const BULLETIN_URL = 'https://www.marinha.mil.br/chm'
+export const BULLETIN_URL = NAVY_BULLETIN_URL
 
 export interface ReminderDecision {
   needed: boolean
